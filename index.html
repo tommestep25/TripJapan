@@ -13,16 +13,11 @@
             box-sizing: border-box;
         }
         
-       body {
+        body {
             font-family: 'Arial', sans-serif;
-            background-image: url('https://wallpapercat.com/w/full/3/1/7/119871-3840x2160-desktop-4k-japan-wallpaper-image.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
             line-height: 1.6;
-            min-height: 100vh;
         }
         
         .container {
@@ -191,6 +186,16 @@
             border-radius: 10px;
             border: 1px solid #ffeaa7;
             margin: 15px 0;
+        }
+        
+        .distance-label {
+            font-family: Arial, sans-serif;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        
+        .distance-label:hover {
+            transform: scale(1.1);
         }
         
         @media (max-width: 768px) {
@@ -441,7 +446,8 @@
                 <h2>🗺️ แผนที่เส้นทางการเดินทาง</h2>
                 <div id="map"></div>
                 <div class="warning">
-                    💡 คลิกวันที่ด้านซ้ายเพื่อดูเส้นทางบนแผนที่
+                    💡 คลิกวันที่ด้านซ้ายเพื่อดูเส้นทางพร้อมระยะทางและเวลาเดินทาง<br>
+                    📍 คลิกที่จุดสีขาวบนเส้นทางเพื่อดูรายละเอียดระยะทาง
                 </div>
             </div>
         </div>
@@ -514,15 +520,50 @@
             kansai: [34.4347, 135.2440]
         };
 
-        // Day routes
+        // Day routes with distances and travel times
         const dayRoutes = {
-            1: [locations.narita, locations.shibuya],
-            2: [locations.shibuya, locations.asakusa, locations.skytree, locations.harajuku, locations.shibuya],
-            3: [locations.shibuya, locations.fuji, locations.fujiq],
-            4: [locations.fujiq, locations.osaka, locations.osakaCastle, locations.dotonbori],
-            5: [locations.osaka, locations.disney],
-            6: [locations.disney, locations.usj],
-            7: [locations.usj, locations.kansai]
+            1: {
+                route: [locations.narita, locations.shibuya],
+                distances: ["60 km"],
+                times: ["1.5 hours"],
+                segments: ["Narita Airport → Shibuya"]
+            },
+            2: {
+                route: [locations.shibuya, locations.asakusa, locations.skytree, locations.harajuku, locations.shibuya],
+                distances: ["12 km", "3 km", "8 km", "6 km"],
+                times: ["30 min", "10 min", "25 min", "20 min"],
+                segments: ["Shibuya → Asakusa", "Asakusa → Tokyo Skytree", "Skytree → Harajuku", "Harajuku → Shibuya"]
+            },
+            3: {
+                route: [locations.shibuya, locations.fuji, locations.fujiq],
+                distances: ["120 km", "15 km"],
+                times: ["2 hours", "30 min"],
+                segments: ["Shibuya → Mount Fuji", "Mount Fuji → Fuji-Q Highland"]
+            },
+            4: {
+                route: [locations.fujiq, locations.osaka, locations.osakaCastle, locations.dotonbori],
+                distances: ["400 km", "5 km", "2 km"],
+                times: ["4.5 hours", "15 min", "10 min"],
+                segments: ["Fuji-Q → Osaka", "Osaka → Osaka Castle", "Castle → Dotonbori"]
+            },
+            5: {
+                route: [locations.osaka, locations.disney],
+                distances: ["550 km"],
+                times: ["5.5 hours"],
+                segments: ["Osaka → Tokyo Disney Resort"]
+            },
+            6: {
+                route: [locations.disney, locations.usj],
+                distances: ["550 km"],
+                times: ["5.5 hours"],
+                segments: ["Disney → Universal Studios Japan"]
+            },
+            7: {
+                route: [locations.usj, locations.kansai],
+                distances: ["50 km"],
+                times: ["1 hour"],
+                segments: ["USJ → Kansai Airport"]
+            }
         };
 
         // Day colors
@@ -548,18 +589,24 @@
             currentMarkers = [];
 
             // Show new route
-            const route = dayRoutes[day];
+            const routeData = dayRoutes[day];
             const color = dayColors[day];
             
-            if (route) {
+            if (routeData && routeData.route) {
+                const route = routeData.route;
+                
                 currentPolyline = L.polyline(route, {
                     color: color,
                     weight: 4,
                     opacity: 0.8
                 }).addTo(map);
 
-                // Add markers
+                // Add markers with location names
                 route.forEach((location, index) => {
+                    const locationKey = Object.keys(locations).find(key => 
+                        locations[key][0] === location[0] && locations[key][1] === location[1]
+                    );
+                    
                     const marker = L.circleMarker(location, {
                         color: color,
                         fillColor: color,
@@ -568,8 +615,36 @@
                     }).addTo(map);
                     currentMarkers.push(marker);
                     
-                    marker.bindPopup(`${locationNames[Object.keys(locations)[Object.values(locations).indexOf(location)]]} - Day ${day}`);
+                    if (locationKey && locationNames[locationKey]) {
+                        marker.bindPopup(`<strong>${locationNames[locationKey]}</strong><br>Day ${day} - Stop ${index + 1}`);
+                    }
                 });
+
+                // Add distance and time labels on route segments
+                for (let i = 0; i < route.length - 1; i++) {
+                    const start = route[i];
+                    const end = route[i + 1];
+                    const midPoint = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2];
+                    
+                    if (routeData.distances && routeData.distances[i] && routeData.times && routeData.times[i]) {
+                        const distanceMarker = L.marker(midPoint, {
+                            icon: L.divIcon({
+                                className: 'distance-label',
+                                html: `<div style="background: white; padding: 4px 8px; border-radius: 15px; border: 2px solid ${color}; font-size: 11px; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                                        <div style="color: ${color};">${routeData.distances[i]}</div>
+                                        <div style="color: #666; font-size: 9px;">${routeData.times[i]}</div>
+                                       </div>`,
+                                iconSize: [60, 40],
+                                iconAnchor: [30, 20]
+                            })
+                        }).addTo(map);
+                        currentMarkers.push(distanceMarker);
+                        
+                        if (routeData.segments && routeData.segments[i]) {
+                            distanceMarker.bindPopup(`<strong>${routeData.segments[i]}</strong><br>Distance: ${routeData.distances[i]}<br>Travel Time: ${routeData.times[i]}`);
+                        }
+                    }
+                }
 
                 // Fit map to route
                 map.fitBounds(currentPolyline.getBounds(), {padding: [20, 20]});
