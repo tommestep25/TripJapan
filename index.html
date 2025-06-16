@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แผนการท่องเที่ยวญี่ปุ่น Road Trip</title>
+    <title>Japan Road Trip Planner</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * {
             margin: 0;
@@ -24,1043 +26,601 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
         
         .header {
             text-align: center;
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             padding: 30px;
             border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             margin-bottom: 30px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
         }
         
         .header h1 {
-            color: #e74c3c;
+            color: #2c3e50;
             font-size: 2.5em;
             margin-bottom: 10px;
         }
         
-        .header p {
-            font-size: 1.2em;
-            color: #666;
-        }
-        
-        .budget-info {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
-        .map-container {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Day Selection Buttons */
-        .day-selector {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        
-        .day-btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            background: linear-gradient(45deg, #74b9ff, #0984e3);
-            color: white;
-        }
-        
-        .day-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .day-btn.active {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-            transform: scale(1.05);
-        }
-        
-        /* Interactive Map */
-        .interactive-map {
-            position: relative;
-            width: 100%;
-            height: 600px;
-            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
-            border-radius: 15px;
-            overflow: hidden;
-            margin: 20px 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .map-location {
-            position: absolute;
-            cursor: pointer;
-            transition: all 0.5s ease;
-            opacity: 0;
-            transform: scale(0.5);
-            visibility: hidden;
-        }
-        
-        .map-location.active {
-            opacity: 0.7;
-            transform: scale(0.9);
-            visibility: visible;
-        }
-        
-        .map-location.highlighted {
-            opacity: 1;
-            transform: scale(1.3);
-            visibility: visible;
-            z-index: 15;
-            animation: bounce 1s ease-in-out;
-        }
-        
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: scale(1.2) translateY(0); }
-            40% { transform: scale(1.2) translateY(-10px); }
-            60% { transform: scale(1.2) translateY(-5px); }
-        }
-        
-        .location-pin {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2em;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            border: 4px solid white;
-            position: relative;
-        }
-        
-        .location-label {
-            text-align: center;
-            margin-top: 8px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.9em;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        
-        .activity-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #e74c3c;
-            color: white;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        
-        /* Day Information Panel */
-        .day-info-panel {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-        }
-        
-        .day-info-panel h3 {
-            color: #e74c3c;
-            margin-bottom: 15px;
-            font-size: 1.4em;
-        }
-        
-        /* Day Cards */
-        .day-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.5s ease;
-            border-left: 5px solid #3498db;
-            opacity: 0;
-            transform: scale(0.95);
-            visibility: hidden;
-            height: 0;
-            margin-bottom: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        
-        .day-card.highlighted {
-            opacity: 1;
-            transform: scale(1);
-            visibility: visible;
-            height: auto;
-            margin-bottom: 20px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
-            border-left-color: #e74c3c;
-        }
-        
-        .day-card-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .day-number {
-            background: #3498db;
-            color: white;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-        
-        .day-card.highlighted .day-number {
-            background: #e74c3c;
-            animation: pulse 1s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        .activity-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-        }
-        
-        .activity-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #3498db;
-            transition: all 0.3s ease;
-        }
-        
-        .activity-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .activity-time {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 5px;
-        }
-        
-        .activity-title {
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        
-        .activity-cost {
-            background: #e8f5e8;
-            color: #27ae60;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: bold;
-            display: inline-block;
-        }
-        
-        /* Controls */
-        .controls {
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            margin: 0 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .day-selector {
-                gap: 5px;
-            }
-            
-            .day-btn {
-                padding: 8px 15px;
-                font-size: 0.9em;
-            }
-            
-            .location-pin {
-                width: 50px;
-                height: 50px;
-                font-size: 1.5em;
-            }
-        }
-        
-        /* Summary Cards */
-        .summary-grid {
+        .trip-info {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin-top: 30px;
+            margin-top: 20px;
         }
         
-        .summary-card {
+        .info-card {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 10px;
             text-align: center;
+            border-left: 4px solid #3498db;
         }
         
-        .summary-total {
-            background: linear-gradient(45deg, #00b894, #00a085);
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .itinerary-section, .map-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .day-card {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+        
+        .day-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .day-card.active {
+            border-color: #3498db;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .day-number {
+            background: #2c3e50;
             color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            font-weight: bold;
+        }
+        
+        .day-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .activities {
+            margin-top: 15px;
+        }
+        
+        .activity {
+            background: rgba(255,255,255,0.7);
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .activity-icon {
+            font-size: 1.2em;
+        }
+        
+        #map {
+            height: 500px;
+            border-radius: 15px;
+            border: 3px solid #ddd;
+        }
+        
+        .budget-section {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+        
+        .budget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .budget-card {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .price {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .route-info {
+            background: #e3f2fd;
             padding: 15px;
             border-radius: 10px;
-            margin-top: 20px;
+            margin: 10px 0;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .special-highlight {
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px 0;
             text-align: center;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ffeaa7;
+            margin: 15px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .trip-info {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-                            <img src="https://images.squarespace-cdn.com/content/v1/5bca4c92e5f7d142aff7690c/1586009218261-EFHAPMN3WNJV63G9F031/Japan-banner.jpg?format=2500w" 
-                     style="width: 100%; height: 300px; display: block; border-radius: 15px;">
-            <h1>🚗 Japan Road Trip Adventure</h1>
-            <p style="font-weight: bold;">4-10 ธันวาคม 2567</p>
-        </div>
-        
-        <div class="budget-info">
-            <h2>💰 งบประมาณ: 30,000-40,000 บาท/คน</h2>
-            <p>รวมทั้งหมด: 180,000-240,000 บาท สำหรับ 6 คน</p>
-        </div>
-        
-        <div class="map-container">
-            <h2 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">🗾 แผนที่เส้นทางการเดินทาง</h2>
+            <h1>🗾 Japan Road Trip Adventure</h1>
+            <p>การท่องเที่ยวญี่ปุ่น 6 วัน 7 คืน | 6 คน</p>
             
-            <!-- Day Selector -->
-            <div class="day-selector">
-                <button class="day-btn" onclick="showDay('all')" id="btn-all">ทั้งหมด</button>
-                <button class="day-btn" onclick="showDay('day1')" id="btn-day1">วันที่ 1 (4 ธ.ค.)</button>
-                <button class="day-btn" onclick="showDay('day2')" id="btn-day2">วันที่ 2 (5 ธ.ค.)</button>
-                <button class="day-btn" onclick="showDay('day3')" id="btn-day3">วันที่ 3 (6 ธ.ค.)</button>
-                <button class="day-btn" onclick="showDay('day4')" id="btn-day4">วันที่ 4 (7 ธ.ค.)</button>
-                <button class="day-btn" onclick="showDay('day5')" id="btn-day5">วันที่ 5 (8 ธ.ค.)</button>
-                <button class="day-btn" onclick="showDay('day6')" id="btn-day6">วันที่ 6 (9 ธ.ค.)</button>
-                <button class="day-btn" onclick="showDay('day7')" id="btn-day7">วันที่ 7 (10 ธ.ค.)</button>
-            </div>
-            
-            <!-- Interactive Map -->
-            <div class="interactive-map" id="interactiveMap">
-                <!-- Japan Map Background -->
-                <svg width="100%" height="100%" viewBox="0 0 800 600" style="position: absolute; top: 0; left: 0;">
-                    <!-- เกาะฮอนชู -->
-                    <path d="M200 150 Q300 120 400 140 Q500 160 600 180 Q650 200 680 250 Q670 300 640 350 Q600 380 550 390 Q500 385 450 375 Q400 365 350 355 Q300 345 250 320 Q200 280 190 220 Q195 180 200 150 Z" 
-                          fill="rgba(76, 175, 80, 0.8)" stroke="white" stroke-width="2"/>
-                    
-                    <!-- เกาะคิวชู -->
-                    <path d="M150 400 Q200 380 250 390 Q280 410 290 450 Q285 480 270 500 Q240 520 200 515 Q160 510 140 480 Q135 450 150 400 Z" 
-                          fill="rgba(76, 175, 80, 0.8)" stroke="white" stroke-width="2"/>
-                    
-                    <!-- เกาะชิโกกุ -->
-                    <path d="M320 380 Q360 370 400 380 Q420 400 415 420 Q400 435 380 440 Q350 445 330 430 Q315 410 320 380 Z" 
-                          fill="rgba(76, 175, 80, 0.8)" stroke="white" stroke-width="2"/>
-                    
-                    <!-- ภูเขาไฟฟูจิ -->
-                    <polygon points="480,280 495,250 510,280" fill="white" stroke="#666" stroke-width="1"/>
-                    <text x="515" y="270" font-size="12" fill="white">🗻 Mt. Fuji</text>
-                </svg>
-                
-                <!-- สถานที่ต่างๆ -->
-                <!-- Narita Airport -->
-                <div class="map-location" data-days="day1,day2" style="top: 18%; left: 65%;" onclick="showLocationDetail('narita')">
-                    <div class="location-pin">✈️
-                        <div class="activity-badge">2</div>
-                    </div>
-                    <div class="location-label">Narita Airport</div>
+            <div class="trip-info">
+                <div class="info-card">
+                    <h3>📅 วันเดินทาง</h3>
+                    <p>4-10 ธันวาคม 2025</p>
                 </div>
-                
-                <!-- Tokyo -->
-                <div class="map-location" data-days="day2,day5" style="top: 25%; left: 58%;" onclick="showLocationDetail('tokyo')">
-                    <div class="location-pin">🏙️
-                        <div class="activity-badge">5</div>
-                    </div>
-                    <div class="location-label">Tokyo</div>
+                <div class="info-card">
+                    <h3>👥 จำนวนคน</h3>
+                    <p>6 คน</p>
                 </div>
-                
-                <!-- Disney -->
-                <div class="map-location" data-days="day5" style="top: 30%; left: 63%;" onclick="showLocationDetail('disney')">
-                    <div class="location-pin">🏰
-                        <div class="activity-badge">1</div>
-                    </div>
-                    <div class="location-label">Disney</div>
+                <div class="info-card">
+                    <h3>💰 งบประมาณ</h3>
+                    <p>30,000-40,000 บาท/คน</p>
                 </div>
-                
-                <!-- Kamakura -->
-                <div class="map-location" data-days="day3" style="top: 35%; left: 55%;" onclick="showLocationDetail('kamakura')">
-                    <div class="location-pin">⛩️
-                        <div class="activity-badge">2</div>
-                    </div>
-                    <div class="location-label">Kamakura</div>
-                </div>
-                
-                <!-- Hakone -->
-                <div class="map-location" data-days="day3" style="top: 40%; left: 50%;" onclick="showLocationDetail('hakone')">
-                    <div class="location-pin">🗻
-                        <div class="activity-badge">2</div>
-                    </div>
-                    <div class="location-label">Hakone</div>
-                </div>
-                
-                <!-- Fuji-Q Highland -->
-                <div class="map-location" data-days="day3" style="top: 42%; left: 52%;" onclick="showLocationDetail('fuji-q')">
-                    <div class="location-pin">👻
-                        <div class="activity-badge">1</div>
-                    </div>
-                    <div class="location-label">Fuji-Q Highland</div>
-                </div>
-                
-                <!-- Osaka -->
-                <div class="map-location" data-days="day4,day5,day6" style="top: 55%; left: 35%;" onclick="showLocationDetail('osaka')">
-                    <div class="location-pin">🍜
-                        <div class="activity-badge">4</div>
-                    </div>
-                    <div class="location-label">Osaka</div>
-                </div>
-                
-                <!-- Universal Studios -->
-                <div class="map-location" data-days="day6" style="top: 58%; left: 38%;" onclick="showLocationDetail('universal')">
-                    <div class="location-pin">⚡
-                        <div class="activity-badge">1</div>
-                    </div>
-                    <div class="location-label">Universal Studios</div>
-                </div>
-                
-                <!-- Nara -->
-                <div class="map-location" data-days="day6,day7" style="top: 60%; left: 42%;" onclick="showLocationDetail('nara')">
-                    <div class="location-pin">🦌
-                        <div class="activity-badge">2</div>
-                    </div>
-                    <div class="location-label">Nara</div>
-                </div>
-                
-                <!-- Kansai Airport -->
-                <div class="map-location" data-days="day7" style="top: 62%; left: 40%;" onclick="showLocationDetail('kansai')">
-                    <div class="location-pin">✈️
-                        <div class="activity-badge">1</div>
-                    </div>
-                    <div class="location-label">Kansai Airport</div>
-                </div>
-            </div>
-            
-            <!-- Day Information Panel - แสดงตลอดเวลา -->
-            <div class="day-info-panel" id="dayInfoPanel">
-                <h3 id="dayTitle">📅 แผนการเดินทาง 7 วัน 6 คืน</h3>
-                <div class="all-days-container" id="allDaysContainer">
-                    <!-- จะถูกเติมด้วย JavaScript -->
-                </div>
-            </div>
-            
-            <!-- Controls -->
-            <div class="controls">
-                <button class="btn" onclick="showAllActivities()">📋 ดูกิจกรรมทั้งหมด</button>
-                <button class="btn" onclick="openGoogleMaps()">🗺️ เปิด Google Maps</button>
-                <button class="btn" onclick="resetMap()">🔄 รีเซ็ตแผนที่</button>
-            </div>
-        </div>
-        
-        <!-- Japan Tourism Map -->
-        <div style="background: white; padding: 30px; border-radius: 15px; margin-top: 30px; text-align: center;">
-            <h3 style="color: #e74c3c; margin-bottom: 20px;">🗾 แผนที่ญี่ปุ่น 10 เขต</h3>
-            <p style="color: #666; margin-bottom: 20px;">แผนที่อย่างเป็นทางการจาก Japan National Tourism Organization (JNTO)</p>
-            <div style="max-width: 800px; margin: 0 auto; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                <img src="https://www.jnto.or.th/wp-content/themes/jnto/images/map-10areas.jpg" 
-                     alt="แผนที่ญี่ปุ่น 10 เขต" 
-                     style="width: 100%; height: auto; display: block;">
-            </div>
-            <div style="margin-top: 20px;">
-                <p style="color: #666; font-size: 0.9em;">
-                    🎯 <strong>เส้นทางการเดินทาง:</strong> Kanto (Tokyo, Kamakura) → Chubu (Hakone) → Kansai (Osaka, Kyoto, Nara)
-                </p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px;">
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
-                        <strong style="color: #3498db;">🏙️ Kanto</strong><br>
-                        <small>Tokyo, Kamakura</small>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
-                        <strong style="color: #27ae60;">🗻 Chubu</strong><br>
-                        <small>Hakone, Mt. Fuji</small>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
-                        <strong style="color: #e67e22;">🏮 Kansai</strong><br>
-                        <small>Osaka, Kyoto, Nara</small>
-                    </div>
+                <div class="info-card">
+                    <h3>🚗 ระยะเวลา</h3>
+                    <p>6 วัน 7 คืน</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Summary -->
-        <div style="background: white; padding: 20px; border-radius: 15px; margin-top: 30px; text-align: center;">
-            <h3 style="color: #e74c3c; margin-bottom: 15px;">💡 สรุปค่าใช้จ่าย (โดยประมาณ)</h3>
-            <div class="summary-grid">
-                <div class="summary-card">
-                    <strong>เที่ยวบิน</strong><br>
-                    ฿15,000-20,000
+
+        <div class="main-content">
+            <div class="itinerary-section">
+                <h2>🗓️ รายละเอียดการเดินทาง</h2>
+                
+                <div class="day-card" data-day="1">
+                    <div class="day-header">
+                        <div class="day-number">วันที่ 1</div>
+                        <div class="day-date">4 ธันวาคม - เดินทางกลางคืน</div>
+                    </div>
+                    <div class="activities">
+                        <div class="activity">
+                            <span class="activity-icon">✈️</span>
+                            <span>เดินทางจากไทย → นาริตะ (เที่ยวบินกลางคืน)</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🛬</span>
+                            <span>เช้า: ถึงสนามบินนาริตะ</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🚗</span>
+                            <span>รับรถเช่า & เดินทางสู่โตเกียว</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🏨</span>
+                            <span>เช็คอิน: โรงแรมในชิบูยา</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🍜</span>
+                            <span>พักผ่อน & ทานอาหารเย็นย่านชิบูยา</span>
+                        </div>
+                    </div>
+                    <div class="route-info">
+                        📍 เส้นทาง: นาริตะ → ชิบูยา (60 กม. | 1.5 ชม.)</div>
                 </div>
-                <div class="summary-card">
-                    <strong>ที่พัก (6 คืน)</strong><br>
-                    ฿15,000-18,000
+
+                <div class="day-card" data-day="2">
+                    <div class="day-header">
+                        <div class="day-number">วันที่ 2</div>
+                        <div class="day-date">5 ธันวาคม - สำรวจโตเกียว</div>
+                    </div>
+                    <div class="activities">
+                        <div class="activity">
+                            <span class="activity-icon">🏯</span>
+                            <span>เช้า: วัดเซ็นโซจิ (อาซากุสะ)</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🗼</span>
+                            <span>กลางวัน: Tokyo Skytree</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🛍️</span>
+                            <span>บ่าย: ช็อปปิ้งย่านฮาราจูกุ</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🌃</span>
+                            <span>เย็น: ชมวิวจากโตเกียวสกายทรี</span>
+                        </div>
+                    </div>
+                    <div class="route-info">
+                        📍 ชิบูยา → อาซากุสะ → ฮาราจูกุ → กลับโรงแรม</div>
                 </div>
-                <div class="summary-card">
-                    <strong>JR Pass + ขนส่ง</strong><br>
-                    ฿8,000-10,000
+
+                <div class="day-card" data-day="3">
+                    <div class="day-header">
+                        <div class="day-number">วันที่ 3</div>
+                        <div class="day-date">6 ธันวาคม - ฟูจิ & บ้านผีสิง</div>
+                    </div>
+                    <div class="activities">
+                        <div class="activity">
+                            <span class="activity-icon">🗻</span>
+                            <span>เช้า: เดินทางสู่ภูเขาฟูจิ</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🏞️</span>
+                            <span>กลางวัน: ทะเลสาบคาวากุจิโกะ</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">👻</span>
+                            <span>บ่าย: Fuji-Q Highland (บ้านผีสิง)</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🎢</span>
+                            <span>เย็น: เครื่องเล่นสุดหลอน</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🏨</span>
+                            <span>พักค้างคืน: โรงแรมใกล้ฟูจิ</span>
+                        </div>
+                    </div>
+                    <div class="special-highlight">
+                        🎃 บ้านผีสิงแนะนำ: Fuji-Q Highland - Do-Dodonpa & Takabisha
+                    </div>
+                    <div class="route-info">
+                        📍 โตเกียว → ฟูจิ (120 กม. | 2 ชม.)</div>
                 </div>
-                <div class="summary-card">
-                    <strong>อาหาร</strong><br>
-                    ฿6,000-8,000
+
+                <div class="day-card" data-day="4">
+                    <div class="day-header">
+                        <div class="day-number">วันที่ 4</div>
+                        <div class="day-date">7 ธันวาคม - เดินทางสู่โอซาก้า</div>
+                    </div>
+                    <div class="activities">
+                        <div class="activity">
+                            <span class="activity-icon">🚗</span>
+                            <span>เช้า: เดินทางจากฟูจิ → โอซาก้า</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🏰</span>
+                            <span>บ่าย: ปราสาทโอซาก้า</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🍜</span>
+                            <span>เย็น: ตลาดโดทงโบริ</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🏨</span>
+                            <span>เช็คอิน: โรงแรมในโอซาก้า</span>
+                        </div>
+                    </div>
+                    <div class="route-info">
+                        📍 ฟูจิ → โอซาก้า (400 กม. | 4.5 ชม.)</div>
                 </div>
-                <div class="summary-card">
-                    <strong>กิจกรรม/ตั๋ว</strong><br>
-                    ฿8,000-10,000
+
+                <div class="day-card special-day" data-day="5">
+                    <div class="day-header">
+                        <div class="day-number">วันที่ 5</div>
+                        <div class="day-date">8 ธันวาคม - Disney Day! 🏰</div>
+                    </div>
+                    <div class="activities">
+                        <div class="activity">
+                            <span class="activity-icon">🏰</span>
+                            <span>เต็มวัน: Tokyo Disneyland/DisneySea</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🎆</span>
+                            <span>เย็น: Fireworks Show</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🚗</span>
+                            <span>กลับโรงแรมดึก</span>
+                        </div>
+                    </div>
+                    <div class="special-highlight">
+                        ✨ วันพิเศษ Disney! เตรียมตัวให้พร้อมตั้งแต่เช้าตรู่
+                    </div>
+                    <div class="route-info">
+                        📍 โอซาก้า → โตเกียว → Disney (550 กม. | 5.5 ชม.)</div>
                 </div>
-                <div class="summary-card">
-                    <strong>ช้อปปิ้ง/อื่นๆ</strong><br>
-                    ฿3,000-5,000
+
+                <div class="day-card special-day" data-day="6">
+                    <div class="day-header">
+                        <div class="day-number">วันที่ 6</div>
+                        <div class="day-date">9 ธันวาคม - Harry Potter Day! ⚡</div>
+                    </div>
+                    <div class="activities">
+                        <div class="activity">
+                            <span class="activity-icon">⚡</span>
+                            <span>เต็มวัน: Universal Studios Japan</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🏰</span>
+                            <span>Wizarding World of Harry Potter</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🍺</span>
+                            <span>ดื่ม Butterbeer</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🛍️</span>
+                            <span>ช็อปของที่ระลึก</span>
+                        </div>
+                    </div>
+                    <div class="special-highlight">
+                        🪄 วันเวทมนตร์! อย่าลืมซื้อ Universal Express Pass
+                    </div>
+                    <div class="route-info">
+                        📍 โตเกียว → โอซาก้า USJ (550 กม. | 5.5 ชม.)</div>
+                </div>
+
+                <div class="day-card" data-day="7">
+                    <div class="day-header">
+                        <div class="day-number">วันที่ 7</div>
+                        <div class="day-date">10 ธันวาคม - เดินทางกลับ</div>
+                    </div>
+                    <div class="activities">
+                        <div class="activity">
+                            <span class="activity-icon">🛍️</span>
+                            <span>เช้า: ช็อปปิ้งนาคาตรงนิส</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">🚗</span>
+                            <span>คืนรถเช่า</span>
+                        </div>
+                        <div class="activity">
+                            <span class="activity-icon">✈️</span>
+                            <span>เดินทางกลับไทย</span>
+                        </div>
+                    </div>
+                    <div class="route-info">
+                        📍 โอซาก้า → สนามบินคันไซ (50 กม. | 1 ชม.)</div>
                 </div>
             </div>
-            <div class="summary-total">
-                <strong>รวมทั้งสิ้น: ฿35,000-41,000 ต่อคน</strong>
+
+            <div class="map-section">
+                <h2>🗺️ แผนที่เส้นทางการเดินทาง</h2>
+                <div id="map"></div>
+                <div class="warning">
+                    💡 คลิกวันที่ด้านซ้ายเพื่อดูเส้นทางบนแผนที่
+                </div>
+            </div>
+        </div>
+
+        <div class="budget-section">
+            <h2>💰 ประมาณการค่าใช้จ่าย (ต่อคน)</h2>
+            <div class="budget-grid">
+                <div class="budget-card">
+                    <h3>🛫 ตั๋วเครื่องบิน</h3>
+                    <div class="price">15,000-20,000 บาท</div>
+                    <p>ไป-กลับ กรุงเทพ-โตเกียว</p>
+                </div>
+                <div class="budget-card">
+                    <h3>🏨 ที่พัก</h3>
+                    <div class="price">5,000-8,000 บาท</div>
+                    <p>โรงแรม 3-4 ดาว (แบ่งกัน 6 คน)</p>
+                </div>
+                <div class="budget-card">
+                    <h3>🚗 รถเช่า + น้ำมัน</h3>
+                    <div class="price">3,000-4,000 บาท</div>
+                    <p>รถเช่า 7 ที่นั่ง (แบ่งกัน 6 คน)</p>
+                </div>
+                <div class="budget-card">
+                    <h3>🎢 บัตรสวนสนุก</h3>
+                    <div class="price">4,000-6,000 บาท</div>
+                    <p>Disney + USJ + Fuji-Q</p>
+                </div>
+                <div class="budget-card">
+                    <h3>🍜 อาหาร</h3>
+                    <div class="price">2,000-3,000 บาท</div>
+                    <p>อาหารและเครื่องดื่ม</p>
+                </div>
+                <div class="budget-card">
+                    <h3>🛍️ ช็อปปิ้ง & อื่นๆ</h3>
+                    <div class="price">1,000-2,000 บาท</div>
+                    <p>ของที่ระลึกและค่าใช้จ่ายอื่นๆ</p>
+                </div>
+            </div>
+            <div class="special-highlight">
+                💰 รวมทั้งหมด: 30,000-43,000 บาท/คน (อยู่ในงบประมาณที่กำหนด!)
             </div>
         </div>
     </div>
-    
+
     <script>
-        // ข้อมูลกิจกรรมแต่ละวัน
-        const dayActivities = {
-            day1: {
-                title: "วันที่ 1 (4 ธ.ค.) - เดินทางกลางคืน",
-                activities: [
-                    {
-                        time: "23:00",
-                        title: "เดินทาง BKK → Narita",
-                        location: "narita",
-                        cost: "฿15,000-20,000/คน",
-                        icon: "✈️"
-                    }
-                ]
-            },
-            day2: {
-                title: "วันที่ 2 (5 ธ.ค.) - Tokyo",
-                activities: [
-                    {
-                        time: "06:00",
-                        title: "เที่ยวบินถึง Narita",
-                        location: "narita",
-                        cost: "ฟรี",
-                        icon: "✈️"
-                    },
-                    {
-                        time: "08:00",
-                        title: "Narita Express → Tokyo",
-                        location: "tokyo",
-                        cost: "฿300/คน",
-                        icon: "🚄"
-                    },
-                    {
-                        time: "10:00",
-                        title: "เช็คอิน โรงแรม Shibuya",
-                        location: "tokyo",
-                        cost: "฿3,000-4,000/คน/คืน",
-                        icon: "🏨"
-                    },
-                    {
-                        time: "12:00",
-                        title: "เที่ยว Senso-ji Temple",
-                        location: "tokyo",
-                        cost: "฿200/คน",
-                        icon: "⛩️"
-                    },
-                    {
-                        time: "15:00",
-                        title: "ช้อปปิ้ง Shibuya & Harajuku",
-                        location: "tokyo",
-                        cost: "฿2,000-3,000/คน",
-                        icon: "🛍️"
-                    }
-                ]
-            },
-            day3: {
-                title: "วันที่ 3 (6 ธ.ค.) - Kamakura & Hakone & บ้านผีสิง",
-                activities: [
-                    {
-                        time: "08:00",
-                        title: "เดินทางไป Kamakura",
-                        location: "kamakura",
-                        cost: "฿200/คน",
-                        icon: "🚊"
-                    },
-                    {
-                        time: "09:30",
-                        title: "เที่ยวพระใหญ่ + วัดสวย",
-                        location: "kamakura",
-                        cost: "฿500/คน",
-                        icon: "⛩️"
-                    },
-                    {
-                        time: "13:00",
-                        title: "เดินทางไป Hakone",
-                        location: "hakone",
-                        cost: "฿400/คน",
-                        icon: "🗻"
-                    },
-                    {
-                        time: "14:30",
-                        title: "ออนเซ็น + วิวภูเขาไฟฟูจิ",
-                        location: "hakone",
-                        cost: "฿2,000/คน",
-                        icon: "♨️"
-                    },
-                    {
-                        time: "18:00",
-                        title: "บ้านผีสิง Fuji-Q Highland",
-                        location: "fuji-q",
-                        cost: "฿2,500/คน",
-                        icon: "👻"
-                    }
-                ]
-            },
-            day4: {
-                title: "วันที่ 4 (7 ธ.ค.) - เดินทางไป Osaka",
-                activities: [
-                    {
-                        time: "08:00",
-                        title: "Shinkansen Tokyo → Osaka",
-                        location: "osaka",
-                        cost: "฿4,000/คน",
-                        icon: "🚅"
-                    },
-                    {
-                        time: "11:30",
-                        title: "เช็คอิน โรงแรม Osaka",
-                        location: "osaka",
-                        cost: "฿2,500/คน/คืน",
-                        icon: "🏨"
-                    },
-                    {
-                        time: "13:00",
-                        title: "อาหารกลางวัน Takoyaki",
-                        location: "osaka",
-                        cost: "฿500/คน",
-                        icon: "🍜"
-                    },
-                    {
-                        time: "15:00",
-                        title: "เที่ยว Dotonbori",
-                        location: "osaka",
-                        cost: "฿500/คน",
-                        icon: "🏮"
-                    }
-                ]
-            },
-            day5: {
-                title: "วันที่ 5 (8 ธ.ค.) - Tokyo Disney 🏰",
-                activities: [
-                    {
-                        time: "05:00",
-                        title: "Shinkansen Osaka → Tokyo",
-                        location: "tokyo",
-                        cost: "฿4,000/คน",
-                        icon: "🚅"
-                    },
-                    {
-                        time: "09:00",
-                        title: "Tokyo Disneyland/DisneySea",
-                        location: "disney",
-                        cost: "฿4,000/คน",
-                        icon: "🏰"
-                    },
-                    {
-                        time: "22:00",
-                        title: "กลับ Tokyo",
-                        location: "tokyo",
-                        cost: "฿200/คน",
-                        icon: "🚄"
-                    }
-                ]
-            },
-            day6: {
-                title: "วันที่ 6 (9 ธ.ค.) - Harry Potter World ⚡",
-                activities: [
-                    {
-                        time: "06:00",
-                        title: "Shinkansen Tokyo → Osaka",
-                        location: "osaka",
-                        cost: "฿4,000/คน",
-                        icon: "🚅"
-                    },
-                    {
-                        time: "10:00",
-                        title: "Universal Studios Japan",
-                        location: "universal",
-                        cost: "฿5,000/คน",
-                        icon: "⚡"
-                    },
-                    {
-                        time: "21:00",
-                        title: "เดินทางไป Nara",
-                        location: "nara",
-                        cost: "฿200/คน",
-                        icon: "🚊"
-                    }
-                ]
-            },
-            day7: {
-                title: "วันที่ 7 (10 ธ.ค.) - เดินทางกลับ",
-                activities: [
-                    {
-                        time: "09:00",
-                        title: "Nara Park เล่นกับกวาง",
-                        location: "nara",
-                        cost: "฿300/คน",
-                        icon: "🦌"
-                    },
-                    {
-                        time: "14:00",
-                        title: "ช้อปปิ้งของฝาก",
-                        location: "kansai",
-                        cost: "฿2,000-3,000/คน",
-                        icon: "🛍️"
-                    },
-                    {
-                        time: "18:00",
-                        title: "เดินทางกลับ KIX → BKK",
-                        location: "kansai",
-                        cost: "ฟรี",
-                        icon: "✈️"
-                    }
-                ]
-            }
+        // Initialize map with English map tiles
+        var map = L.map('map').setView([35.6762, 139.6503], 6);
+        
+        // Use CartoDB Positron tiles for English labels
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Define locations
+        const locations = {
+            narita: [35.7720, 140.3929],
+            shibuya: [35.6598, 139.7006],
+            asakusa: [35.7148, 139.7967],
+            skytree: [35.7101, 139.8107],
+            harajuku: [35.6702, 139.7026],
+            fuji: [35.3606, 138.7274],
+            fujiq: [35.4884, 138.7785],
+            osaka: [34.6937, 135.5023],
+            osakaCastle: [34.6873, 135.5262],
+            dotonbori: [34.6685, 135.5018],
+            disney: [35.6329, 139.8804],
+            usj: [34.6658, 135.4320],
+            kansai: [34.4347, 135.2440]
         };
-        
-        // แสดงกิจกรรมตามวันที่เลือก
-        function showDay(day) {
-            // รีเซ็ตปุ่มทั้งหมด
-            document.querySelectorAll('.day-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // เปิดใช้งานปุ่มที่เลือก
-            document.getElementById(`btn-${day}`).classList.add('active');
-            
-            // รีเซ็ตแผนที่และการ์ด - ซ่อนทุกอย่างก่อน
-            document.querySelectorAll('.map-location').forEach(location => {
-                location.classList.remove('active', 'highlighted');
-            });
-            
-            document.querySelectorAll('.day-card').forEach(card => {
-                card.classList.remove('highlighted');
-            });
-            
-            if (day === 'all') {
-                // แสดงทุกสถานที่และทุกการ์ด
-                document.querySelectorAll('.map-location').forEach(location => {
-                    location.classList.add('active');
-                });
-                document.querySelectorAll('.day-card').forEach(card => {
-                    card.classList.add('highlighted');
-                });
-                document.getElementById('dayTitle').textContent = '📅 แผนการเดินทาง 7 วัน 6 คืน - ทั้งหมด';
-            } else {
-                // แสดงเฉพาะสถานที่ในวันที่เลือก
-                let hasLocationsInDay = false;
-                
-                document.querySelectorAll('.map-location').forEach(location => {
-                    const days = location.getAttribute('data-days');
-                    if (days && days.split(',').includes(day)) {
-                        location.classList.add('active', 'highlighted');
-                        hasLocationsInDay = true;
-                    }
-                });
-                
-                // ถ้าไม่มีสถานที่ในวันนั้น แสดงทุกสถานที่แต่จาง
-                if (!hasLocationsInDay) {
-                    document.querySelectorAll('.map-location').forEach(location => {
-                        location.classList.add('active');
-                    });
-                }
-                
-                // Highlight การ์ดวันที่เลือก
-                const selectedCard = document.getElementById(`card-${day}`);
-                if (selectedCard) {
-                    selectedCard.classList.add('highlighted');
-                    selectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-                
-                const dayData = dayActivities[day];
-                if (dayData) {
-                    document.getElementById('dayTitle').textContent = `📅 ${dayData.title} - เลือกแล้ว`;
-                }
+
+        // Day routes
+        const dayRoutes = {
+            1: [locations.narita, locations.shibuya],
+            2: [locations.shibuya, locations.asakusa, locations.skytree, locations.harajuku, locations.shibuya],
+            3: [locations.shibuya, locations.fuji, locations.fujiq],
+            4: [locations.fujiq, locations.osaka, locations.osakaCastle, locations.dotonbori],
+            5: [locations.osaka, locations.disney],
+            6: [locations.disney, locations.usj],
+            7: [locations.usj, locations.kansai]
+        };
+
+        // Day colors
+        const dayColors = {
+            1: '#3498db',
+            2: '#e74c3c',
+            3: '#f39c12',
+            4: '#2ecc71',
+            5: '#9b59b6',
+            6: '#1abc9c',
+            7: '#34495e'
+        };
+
+        let currentPolyline = null;
+        let currentMarkers = [];
+
+        function showRoute(day) {
+            // Clear existing route
+            if (currentPolyline) {
+                map.removeLayer(currentPolyline);
             }
+            currentMarkers.forEach(marker => map.removeLayer(marker));
+            currentMarkers = [];
+
+            // Show new route
+            const route = dayRoutes[day];
+            const color = dayColors[day];
             
-            // เพิ่ม delay เล็กน้อยเพื่อให้เห็น animation
-            setTimeout(() => {
-            }, 300);
-        }
-        
-        // สร้างการ์ดทุกวัน
-        function createAllDayCards() {
-            const container = document.getElementById('allDaysContainer');
-            container.innerHTML = '';
-            
-            Object.keys(dayActivities).forEach(dayKey => {
-                const dayData = dayActivities[dayKey];
-                const dayNumber = dayKey.replace('day', '');
-                
-                const dayCard = document.createElement('div');
-                dayCard.className = 'day-card';
-                dayCard.id = `card-${dayKey}`;
-                
-                dayCard.innerHTML = `
-                    <div class="day-card-title">
-                        <div class="day-number">${dayNumber}</div>
-                        ${dayData.title}
-                    </div>
-                    <div class="activity-grid">
-                        ${dayData.activities.map(activity => `
-                            <div class="activity-item" onclick="highlightLocationFromActivity('${activity.location}', '${dayKey}')">
-                                <div class="activity-time">${activity.icon} ${activity.time}</div>
-                                <div class="activity-title">${activity.title}</div>
-                                <div class="activity-cost">${activity.cost}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                
-                container.appendChild(dayCard);
-            });
-        }
-        
-        // Highlight สถานที่จากกิจกรรม
-        function highlightLocationFromActivity(locationId, dayKey) {
-            // รีเซ็ต highlight ทั้งหมด
-            document.querySelectorAll('.map-location').forEach(location => {
-                location.classList.remove('highlighted');
-            });
-            
-            // Highlight สถานที่ที่เลือก
-            const targetLocation = document.querySelector(`[onclick*="${locationId}"]`);
-            if (targetLocation) {
-                targetLocation.classList.add('highlighted');
-                
-                // เลื่อนไปยังแผนที่
-                document.getElementById('interactiveMap').scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
+            if (route) {
+                currentPolyline = L.polyline(route, {
+                    color: color,
+                    weight: 4,
+                    opacity: 0.8
+                }).addTo(map);
+
+                // Add markers
+                route.forEach((location, index) => {
+                    const marker = L.circleMarker(location, {
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: 0.7,
+                        radius: 8
+                    }).addTo(map);
+                    currentMarkers.push(marker);
+                    
+                    marker.bindPopup(`${locationNames[Object.keys(locations)[Object.values(locations).indexOf(location)]]} - Day ${day}`);
                 });
-            }
-            
-            // แสดงข้อมูลเพิ่มเติม
-            setTimeout(() => {
-                showLocationDetail(locationId);
-            }, 500);
-        }
-        
-        // แสดงกิจกรรมในวันที่เลือก - ไม่ใช้แล้วเพราะแสดงทุกวันตลอด
-        function showDayActivities(day) {
-            // ฟังก์ชันนี้ไม่ใช้แล้ว เพราะแสดงข้อมูลทุกวันตลอดเวลา
-            return;
-        }
-        
-        // Highlight สถานที่บนแผนที่
-        function highlightLocation(locationId) {
-            // รีเซ็ต highlight ทั้งหมด
-            document.querySelectorAll('.map-location').forEach(location => {
-                location.classList.remove('highlighted');
-            });
-            
-            // Highlight สถานที่ที่เลือก
-            const targetLocation = document.querySelector(`[onclick*="${locationId}"]`);
-            if (targetLocation) {
-                targetLocation.classList.add('highlighted');
-                
-                // เลื่อนไปยังสถานที่นั้น
-                targetLocation.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
+
+                // Fit map to route
+                map.fitBounds(currentPolyline.getBounds(), {padding: [20, 20]});
             }
         }
-        
-        // แสดงรายละเอียดสถานที่เมื่อคลิก
-        function showLocationDetail(locationId) {
-            const locationDetails = {
-                'narita': {
-                    title: '✈️ สนามบิน Narita',
-                    info: 'จุดเริ่มต้นและสิ้นสุดการเดินทาง<br>🚄 Narita Express ไป Tokyo<br>💰 ค่าเดินทาง: 1,000¥'
-                },
-                'tokyo': {
-                    title: '🏙️ Tokyo',
-                    info: 'เมืองหลวงของญี่ปุ่น<br>📍 Shibuya, Harajuku, Senso-ji<br>🏨 ที่พัก: 3,000-4,000฿/คืน'
-                },
-                'disney': {
-                    title: '🏰 Tokyo Disney',
-                    info: 'วันพิเศษ 8 ธ.ค.!<br>⏰ เวลา: 09:00-22:00<br>💰 ค่าตั๋ว: 2,500฿/คน'
-                },
-                'kamakura': {
-                    title: '⛩️ Kamakura',
-                    info: 'เมืองเก่าแก่ พระใหญ่<br>🚊 JR Tokaido Line<br>💰 ค่าเข้าชม: 500฿/คน'
-                },
-                'hakone': {
-                    title: '🗻 Hakone',
-                    info: 'ออนเซ็น วิวภูเขาไฟฟูจิ<br>♨️ บ่อน้ำร้อน<br>💰 ค่าใช้จ่าย: 2,000฿/คน'
-                },
-                'fuji-q': {
-                    title: '👻 Fuji-Q Highland',
-                    info: 'บ้านผีสิงระดับโลก!<br>⏰ เวลา: 18:00-22:00<br>💰 ค่าตั๋ว: 2,500฿/คน'
-                },
-                'osaka': {
-                    title: '🍜 Osaka',
-                    info: 'เมืองอาหาร Takoyaki<br>🏮 Dotonbori<br>🏨 ที่พัก: 2,500฿/คืน'
-                },
-                'universal': {
-                    title: '⚡ Universal Studios Japan',
-                    info: 'Harry Potter World!<br>⏰ เวลา: 10:00-21:00<br>💰 ค่าตั๋ว: 5,000฿/คน'
-                },
-                'nara': {
-                    title: '🦌 Nara Park',
-                    info: 'เล่นกับกวางน้อย<br>🦌 Nara Park<br>💰 ค่าเข้าชม: 300฿/คน'
-                },
-                'kansai': {
-                    title: '✈️ Kansai Airport',
-                    info: 'สนามบินกลับบ้าน<br>🛍️ ช้อปปิ้งของฝาก<br>✈️ เที่ยวบิน 18:00'
-                }
-            };
-            
-            const details = locationDetails[locationId];
-            if (details) {
-                alert(`${details.title}\n\n${details.info.replace(/<br>/g, '\n')}`);
-            }
-        }
-        
-        // แสดงกิจกรรมทั้งหมด
-        function showAllActivities() {
-            document.getElementById('allDaysContainer').scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
+
+        // Add click events to day cards
+        document.querySelectorAll('.day-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Remove active class from all cards
+                document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked card
+                this.classList.add('active');
+                
+                // Show route for this day
+                const day = parseInt(this.getAttribute('data-day'));
+                showRoute(day);
             });
-        }
-        
-        // เปิด Google Maps
-        function openGoogleMaps() {
-            const destinations = [
-                'Narita International Airport, Japan',
-                'Shibuya, Tokyo, Japan',
-                'Kamakura, Kanagawa, Japan',
-                'Hakone, Kanagawa, Japan',
-                'Tokyo Disneyland, Chiba, Japan',
-                'Universal Studios Japan, Osaka, Japan',
-                'Nara Park, Nara, Japan',
-                'Kansai International Airport, Japan'
-            ];
-            
-            const url = `https://www.google.com/maps/dir/${destinations.join('/')}`;
-            window.open(url, '_blank');
-        }
-        
-        // รีเซ็ตแผนที่
-        function resetMap() {
-            showDay('all');
-        }
-        
-        // เริ่มต้นแสดงทุกสถานที่
-        window.addEventListener('load', function() {
-            // สร้างการ์ดทุกวัน
-            createAllDayCards();
-            
-            // ตั้งค่าเริ่มต้น - ซ่อนทุกไอคอนก่อน
-            document.querySelectorAll('.map-location').forEach(location => {
-                location.classList.remove('active', 'highlighted');
-            });
-            
-            // แสดงทุกสถานที่
-            setTimeout(() => {
-                showDay('all');
-            }, 100);
-            
-            // Animation เริ่มต้น
-            setTimeout(() => {
-                document.querySelectorAll('.map-location').forEach((location, index) => {
-                    setTimeout(() => {
-                        if (location.classList.contains('active')) {
-                            location.style.transition = 'all 0.5s ease';
-                        }
-                    }, index * 100);
-                });
-            }, 500);
-            
-            // Animation การ์ด
-            setTimeout(() => {
-                document.querySelectorAll('.day-card').forEach((card, index) => {
-                    setTimeout(() => {
-                        // เริ่มต้นซ่อนการ์ด
-                        card.style.opacity = '0';
-                        card.style.transform = 'translateY(20px) scale(0.95)';
-                        card.style.transition = 'all 0.5s ease';
-                        
-                        setTimeout(() => {
-                            // ทุกการ์ดจะ highlighted เมื่อเริ่มต้น (แสดงทั้งหมด)
-                            card.classList.add('highlighted');
-                            card.style.opacity = '';
-                            card.style.transform = '';
-                        }, 100);
-                    }, index * 100);
-                });
-            }, 800);
         });
+
+        // Location names in English
+        const locationNames = {
+            narita: 'Narita Airport',
+            shibuya: 'Shibuya',
+            asakusa: 'Asakusa (Sensoji Temple)',
+            skytree: 'Tokyo Skytree',
+            harajuku: 'Harajuku',
+            fuji: 'Mount Fuji',
+            fujiq: 'Fuji-Q Highland',
+            osaka: 'Osaka',
+            osakaCastle: 'Osaka Castle',
+            dotonbori: 'Dotonbori',
+            disney: 'Tokyo Disney Resort',
+            usj: 'Universal Studios Japan',
+            kansai: 'Kansai Airport'
+        };
+
+        // Show all locations on initial load
+        Object.entries(locations).forEach(([key, coords]) => {
+            L.circleMarker(coords, {
+                color: '#34495e',
+                fillColor: '#ecf0f1',
+                fillOpacity: 0.7,
+                radius: 6
+            }).addTo(map).bindPopup(locationNames[key]);
+        });
+
+        // Show day 1 route by default
+        showRoute(1);
+        document.querySelector('[data-day="1"]').classList.add('active');
     </script>
 </body>
 </html>
