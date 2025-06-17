@@ -164,8 +164,6 @@ settingsState[stateKey] = !isActive;
         // Close settings panel
         closeSettings();
         
-        // Show success message
-        showNotification('✅ บันทึกการตั้งค่าเรียบร้อย!');
       }
 
       // Show notification
