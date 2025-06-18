@@ -4,14 +4,42 @@ const cors = require('cors');
 require('dotenv').config(); // โหลด environment variables
 
 const app = express();
+
+
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: '*', // ในการใช้งานจริงควรระบุ domain ที่แน่นอน
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
+
+// Health check endpoint สำหรับ Render
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Japan Trip API is running! 🇯🇵',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      'GET /': 'Health check',
+      'GET /api/activities': 'Get all activities',
+      'POST /api/activities': 'Create new activity',
+      'POST /api/trip/save-all': 'Save all trip data',
+      'GET /api/activities/day/:day': 'Get activities by day',
+      'PUT /api/activities/:id': 'Update activity',
+      'DELETE /api/activities/:id': 'Delete activity',
+      'DELETE /api/activities/clear-all': 'Clear all data'
+    }
+  });
+});
 
 // เชื่อมต่อ Neon Database
 // ⚠️ สำคัญ: ใส่ password จริงของคุณแทน ****************
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_ce3w8DZkWdbr@ep-square-brook-a12j3hmy-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require',
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 // ตรวจสอบการเชื่อมต่อ database
