@@ -7,11 +7,7 @@ const app = express();
 
 
 app.use(express.json());
-app.use(cors({
-  origin: '*', // ในการใช้งานจริงควรระบุ domain ที่แน่นอน
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type']
-}));
+app.use(cors());
 
 // Health check endpoint สำหรับ Render
 app.get('/', (req, res) => {
