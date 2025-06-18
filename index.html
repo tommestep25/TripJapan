@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ไปดูหิมะ - Trip Editor with Database</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="style.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>
+          <img
+            style="height: 30px"
+            src="https://w7.pngwing.com/pngs/301/302/png-transparent-japan-torii-idea-sticker-t-shirt-japan-logo-sticker-art.png"
+          />
+          Japan Road Trip - Live Editor with Database
+        </h1>
+        <p>การท่องเที่ยวญี่ปุ่น 6 วัน 7 คืน | 6 คน </p>
+        <div id="db-status" class="db-status db-disconnected">
+          🔴 ยังไม่ได้เชื่อมต่อฐานข้อมูล
+        </div>
+        <div class="trip-info">
+          <div class="info-card">
+            <h3>📅 วันเดินทาง</h3>
+            <p>4-10 ธันวาคม 2025</p>
+          </div>
+          <div class="info-card">
+            <h3>💰 งบประมาณ</h3>
+            <p>30,000-40,000 บาท/คน</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-success" onclick="addNewDay()">➕ เพิ่มวันใหม่</button>
+        <button class="btn btn-primary" onclick="saveAllToDatabase()">☁️ บันทึกลงฐานข้อมูล</button>
+        <button class="btn" onclick="loadFromDatabase()">📥 โหลดจากฐานข้อมูล</button>
+        <button class="btn btn-danger" onclick="clearAllData()">🗑️ ล้างข้อมูลทั้งหมด</button>
+      </div>
+
+      <div id="status-display" class="status-display" style="display: none;"></div>
+
+      <div class="main-content">
+        <div class="itinerary-section">
+          <h2>🗓️ รายละเอียดการเดินทาง</h2>
+          <div id="days-container">
+            <!-- Days will be loaded here -->
+          </div>
+        </div>
+
+        <div class="map-section">
+          <h2>🗺️ แผนที่เส้นทางการเดินทาง</h2>
+          <div id="map"></div>
+          <div class="warning">
+            💡 คลิกวันที่ด้านซ้ายเพื่อดูเส้นทางพร้อมระยะทางและเวลาเดินทาง<br />
+            📍 คลิกที่จุดสีขาวบนเส้นทางเพื่อดูรายละเอียดระยะทาง<br />
+            💾 ข้อมูลจะถูกบันทึกอัตโนมัติเมื่อแก้ไข
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="budget-section" id="budget-section">
+        <h2>💰 เครื่องคำนวณค่าใช้จ่าย (แบบ Real-time)</h2>
+
+        <div class="calculator-container">
+          <div class="input-section">
+            <h3>🔧 ปรับแต่งค่าใช้จ่าย</h3>
+
+            <div class="reset-button-container">
+              <button onclick="resetBudget()" class="reset-button">
+                🔄 รีเซ็ตค่าเริ่มต้น
+              </button>
+            </div>
+
+            <div class="calculator-grid">
+              <div class="calc-card">
+                <label>✈️ ตั๋วเครื่องบิน (บาท/คน)</label>
+                <input
+                  type="range"
+                  id="flight-cost"
+                  min="10000"
+                  max="30000"
+                  value="13000"
+                  oninput="updateBudget()"
+                />
+                <div class="value-display" id="flight-value">17,500 บาท</div>
+              </div>
+
+              <div class="calc-card">
+                <label>🏨 ที่พัก (บาท/คน/คืน)</label>
+                <input
+                  type="range"
+                  id="hotel-cost"
+                  min="1000"
+                  max="4000"
+                  value="2000"
+                  oninput="updateBudget()"
+                />
+                <div class="value-display" id="hotel-value">
+                  2,000 บาท × 6 คืน
+                </div>
+              </div>
+
+              <div class="calc-card">
+                <label>🚗 รถเช่า+น้ำมัน (บาท/วัน ÷ 6 คน)</label>
+                <input
+                  type="range"
+                  id="car-cost"
+                  min="2000"
+                  max="5000"
+                  value="3000"
+                  oninput="updateBudget()"
+                />
+                <div class="value-display" id="car-value">3,000 บาท ÷ 6 คน</div>
+              </div>
+
+              <div class="calc-card">
+                <label>🎢 บัตรสวนสนุก (บาท/คน)</label>
+                <input
+                  type="range"
+                  id="ticket-cost"
+                  min="3000"
+                  max="8000"
+                  value="5000"
+                  oninput="updateBudget()"
+                />
+                <div class="value-display" id="ticket-value">5,000 บาท</div>
+              </div>
+
+              <div class="calc-card">
+                <label>🍜 อาหาร (บาท/คน/วัน)</label>
+                <input
+                  type="range"
+                  id="food-cost"
+                  min="300"
+                  max="2000"
+                  value="1000"
+                  oninput="updateBudget()"
+                />
+                <div class="value-display" id="food-value">1,000 บาท × 6 วัน</div>
+              </div>
+
+              <div class="calc-card">
+                <label>🛍️ ช็อปปิ้ง+อื่นๆ (บาท/คน)</label>
+                <input
+                  type="range"
+                  id="shopping-cost"
+                  min="500"
+                  max="5000"
+                  value="1500"
+                  oninput="updateBudget()"
+                />
+                <div class="value-display" id="shopping-value">1,500 บาท</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-section">
+            <h3>📊 ผลการคำนวณ</h3>
+
+            <div class="total-display">
+              <div class="total-per-person">
+                <h4>💰 ต่อคน</h4>
+                <div class="big-number" id="total-per-person">32,700 บาท</div>
+              </div>
+
+              <div class="total-group">
+                <h4>👥 รวม 6 คน</h4>
+                <div class="big-number" id="total-group">196,200 บาท</div>
+              </div>
+            </div>
+
+            <div class="budget-status" id="budget-status">
+              <div class="status-good">
+                ✅ อยู่ในงบประมาณ 30,000-40,000 บาท/คน
+              </div>
+            </div>
+
+            <div class="breakdown-chart" id="breakdown-chart">
+              <h4>📈 สัดส่วนค่าใช้จ่าย</h4>
+              <div class="chart-container">
+                <div class="chart-bar">
+                  <div class="bar flight-bar" style="width: 53.5%"></div>
+                  <span>✈️ ตั๋วเครื่องบิน: 53.5%</span>
+                </div>
+                <div class="chart-bar">
+                  <div class="bar hotel-bar" style="width: 22%"></div>
+                  <span>🏨 ที่พัก: 22.0%</span>
+                </div>
+                <div class="chart-bar">
+                  <div class="bar ticket-bar" style="width: 15.3%"></div>
+                  <span>🎢 สวนสนุก: 15.3%</span>
+                </div>
+                <div class="chart-bar">
+                  <div class="bar food-bar" style="width: 9.2%"></div>
+                  <span>🍜 อาหาร: 9.2%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+  </body>
+</html>
+<script src="script.js"></script>
