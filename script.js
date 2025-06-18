@@ -1,5 +1,5 @@
 // Configuration
-      const API_BASE_URL = 'https://trip-backend.onrender.com'; // ใช้ 127.0.0.1 แทน localhost เพื่อหลีกเลี่ยง IPv6 issues
+      const API_BASE_URL = 'https://trip-backend-d62e.onrender.com'; // ใช้ 127.0.0.1 แทน localhost เพื่อหลีกเลี่ยง IPv6 issues
       
       // Global variables
       let map;
