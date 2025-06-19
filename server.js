@@ -4,38 +4,14 @@ const cors = require('cors');
 require('dotenv').config(); // โหลด environment variables
 
 const app = express();
-
-
 app.use(express.json());
 app.use(cors());
-
-// Health check endpoint สำหรับ Render
-app.get('/', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'Japan Trip API is running! 🇯🇵',
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      'GET /': 'Health check',
-      'GET /api/activities': 'Get all activities',
-      'POST /api/activities': 'Create new activity',
-      'POST /api/trip/save-all': 'Save all trip data',
-      'GET /api/activities/day/:day': 'Get activities by day',
-      'PUT /api/activities/:id': 'Update activity',
-      'DELETE /api/activities/:id': 'Delete activity',
-      'DELETE /api/activities/clear-all': 'Clear all data'
-    }
-  });
-});
 
 // เชื่อมต่อ Neon Database
 // ⚠️ สำคัญ: ใส่ password จริงของคุณแทน ****************
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_ce3w8DZkWdbr@ep-square-brook-a12j3hmy-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require',
-  ssl: { rejectUnauthorized: false },
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  ssl: { rejectUnauthorized: false }
 });
 
 // ตรวจสอบการเชื่อมต่อ database
@@ -73,12 +49,13 @@ createTableIfNotExists();
 
 // บันทึกกิจกรรมเดี่ยว
 app.post('/api/activities', async (req, res) => {
-  const { trip_day, place, time, description, latitude, longitude } = req.body;
+  const { trip_day, place, time, description, latitude, longitude, cost } = req.body;
 
+  console.log('📥 Received data:', req.body);
   try {
     const result = await pool.query(
-      'INSERT INTO trip_activities (trip_day, place, time, description, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [trip_day, place, time, description, latitude, longitude]
+      'INSERT INTO trip_activities (trip_day, place, time, description, latitude, longitude, cost) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [trip_day, place, time, description, latitude, longitude, cost || 0]
     );
     res.status(201).json({
       success: true,
@@ -110,14 +87,15 @@ app.post('/api/trip/save-all', async (req, res) => {
       for (const activity of day.activities) {
         const location = locationDatabase[activity.location] || {};
         const promise = pool.query(
-          'INSERT INTO trip_activities (trip_day, place, time, description, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6)',
+          'INSERT INTO trip_activities (trip_day, place, time, description, latitude, longitude, cost) VALUES ($1, $2, $3, $4, $5, $6, $7)',
           [
             `วันที่ ${day.day}`,
             activity.location || 'unknown',
             activity.time,
             activity.text,
             location.lat || null,
-            location.lon || null
+            location.lon || null,
+            activity.cost || 0
           ]
         );
         insertPromises.push(promise);
@@ -184,12 +162,12 @@ app.get('/api/activities/day/:day', async (req, res) => {
 // อัปเดตกิจกรรม
 app.put('/api/activities/:id', async (req, res) => {
   const { id } = req.params;
-  const { place, time, description, latitude, longitude } = req.body;
+  const { place, time, description, latitude, longitude, cost } = req.body;
 
   try {
     const result = await pool.query(
-      'UPDATE trip_activities SET place = $1, time = $2, description = $3, latitude = $4, longitude = $5 WHERE id = $6 RETURNING *',
-      [place, time, description, latitude, longitude, id]
+      'UPDATE trip_activities SET place = $1, time = $2, description = $3, latitude = $4, longitude = $5, cost = $6 WHERE id = $7 RETURNING *',
+      [place, time, description, latitude, longitude, cost || 0, id]  // เปลี่ยนจาก $6 เป็น $7 สำหรับ id
     );
     
     if (result.rowCount === 0) {
@@ -208,7 +186,8 @@ app.put('/api/activities/:id', async (req, res) => {
     console.error('Error updating activity:', err);
     res.status(500).json({
       success: false,
-      error: 'Error updating data'
+      error: 'Error updating data',
+      details: err.message
     });
   }
 });
@@ -268,20 +247,61 @@ app.delete('/api/activities', async (req, res) => {
 
 // Location database for coordinates lookup
 const locationDatabase = {
-  'narita': { lat: 35.772, lon: 140.3929 },
-  'shibuya': { lat: 35.6598, lon: 139.7006 },
-  'asakusa': { lat: 35.7148, lon: 139.7967 },
-  'skytree': { lat: 35.7101, lon: 139.8107 },
-  'harajuku': { lat: 35.6702, lon: 139.7026 },
-  'fuji': { lat: 35.3606, lon: 138.7274 },
-  'fujiq': { lat: 35.4884, lon: 138.7785 },
-  'osaka': { lat: 34.6937, lon: 135.5023 },
-  'osakacastle': { lat: 34.6873, lon: 135.5262 },
-  'dotonbori': { lat: 34.6685, lon: 135.5018 },
-  'disney': { lat: 35.6329, lon: 139.8804 },
-  'usj': { lat: 34.6658, lon: 135.432 },
-  'kansai': { lat: 34.4347, lon: 135.244 },
-  'tokyo': { lat: 35.6762, lon: 139.6503 }
+  // Tokyo Area
+  narita: { name: "Narita Airport", lat: 35.772, lon: 140.3929 },
+  haneda: { name: "Haneda Airport", lat: 35.5494, lon: 139.7798 },
+  tokyo: { name: "Tokyo", lat: 35.6762, lon: 139.6503 },
+  shibuya: { name: "Shibuya", lat: 35.6598, lon: 139.7006 },
+  shinjuku: { name: "Shinjuku", lat: 35.6938, lon: 139.7034 },
+  ueno: { name: "Ueno", lat: 35.7138, lon: 139.7773 },
+  asakusa: { name: "Asakusa", lat: 35.7148, lon: 139.7967 },
+  skytree: { name: "Tokyo Skytree", lat: 35.7101, lon: 139.8107 },
+  harajuku: { name: "Harajuku", lat: 35.6702, lon: 139.7026 },
+  akihabara: { name: "Akihabara", lat: 35.6984, lon: 139.773 },
+  ginza: { name: "Ginza", lat: 35.6717, lon: 139.765 },
+  odaiba: { name: "Odaiba", lat: 35.6275, lon: 139.7768 },
+  disney: { name: "Tokyo Disney Resort", lat: 35.6329, lon: 139.8804 },
+
+  // Mt. Fuji Area
+  fuji: { name: "Mount Fuji", lat: 35.3606, lon: 138.7274 },
+  fujiq: { name: "Fuji-Q Highland", lat: 35.4884, lon: 138.7785 },
+  kawaguchiko: { name: "Lake Kawaguchiko", lat: 35.5245, lon: 138.7554 },
+
+  // Osaka Area
+  osaka: { name: "Osaka", lat: 34.6937, lon: 135.5023 },
+  dotonbori: { name: "Dotonbori", lat: 34.6685, lon: 135.5018 },
+  osakacastle: { name: "Osaka Castle", lat: 34.6873, lon: 135.5262 },
+  usj: { name: "Universal Studios Japan", lat: 34.6658, lon: 135.432 },
+  shin_osaka: { name: "Shin-Osaka Station", lat: 34.7335, lon: 135.5005 },
+  kansai: { name: "Kansai Airport", lat: 34.4347, lon: 135.244 },
+
+  // Kyoto Area
+  kyoto: { name: "Kyoto", lat: 35.0116, lon: 135.7681 },
+  fushimi: { name: "Fushimi Inari Shrine", lat: 34.9671, lon: 135.7727 },
+  kinkakuji: { name: "Kinkaku-ji (Golden Pavilion)", lat: 35.0394, lon: 135.7289 },
+  arashiyama: { name: "Arashiyama Bamboo Grove", lat: 35.0094, lon: 135.6668 },
+
+  // Nara
+  nara: { name: "Nara", lat: 34.6851, lon: 135.8048 },
+  nara_park: { name: "Nara Park", lat: 34.6851, lon: 135.8431 },
+
+  // Hiroshima
+  hiroshima: { name: "Hiroshima", lat: 34.3853, lon: 132.4553 },
+  peacepark: { name: "Hiroshima Peace Memorial", lat: 34.3955, lon: 132.4536 },
+
+  // Sapporo
+  sapporo: { name: "Sapporo", lat: 43.0621, lon: 141.3544 },
+  odori: { name: "Odori Park", lat: 43.0606, lon: 141.3448 },
+
+  // Fukuoka
+  fukuoka: { name: "Fukuoka", lat: 33.5902, lon: 130.4017 },
+
+  // Nagoya
+  nagoya: { name: "Nagoya", lat: 35.1815, lon: 136.9066 },
+
+  // Yokohama
+  yokohama: { name: "Yokohama", lat: 35.4437, lon: 139.638 },
+  minatomirai: { name: "Minato Mirai", lat: 35.4575, lon: 139.6322 },
 };
 
 const PORT = process.env.PORT || 3000;
