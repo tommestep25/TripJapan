@@ -611,7 +611,7 @@
         right: 30px;
         width: 60px;
         height: 60px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: transparent;
         border: none;
         border-radius: 50%;
         color: white;
