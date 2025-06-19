@@ -76,7 +76,7 @@ const locationDatabase = {
 
   // โยโกฮาม่า
   yokohama: { name: "โยโกฮาม่า", lat: 35.4437, lon: 139.638 },
-  minatomirai: { name: "มินาโตะมิไร", lat: 35.4575, lon: 139.6322 }
+  minatomirai: { name: "มินาโตะมิไร", lat: 35.4575, lon: 139.6322 },
 };
 
 // Check database connection on load
@@ -235,13 +235,13 @@ async function saveAllToDatabase() {
 // Load data from database
 async function loadFromDatabase(showLoading = true) {
   if (!dbConnected) {
-    showNotification('⚠️ ไม่ได้เชื่อมต่อฐานข้อมูล', 'warning');
+    showNotification("⚠️ ไม่ได้เชื่อมต่อฐานข้อมูล", "warning");
     return;
   }
 
   // ถ้าเรียกจากปุ่ม จะมี event.target
   const loadBtn = event ? event.target : null;
-  
+
   if (loadBtn && showLoading) {
     loadBtn.disabled = true;
     loadBtn.innerHTML = '⏳ กำลังโหลด... <span class="loading-spinner"></span>';
@@ -249,20 +249,20 @@ async function loadFromDatabase(showLoading = true) {
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/activities`);
-    if (!response.ok) throw new Error('Failed to load data');
-    
+    if (!response.ok) throw new Error("Failed to load data");
+
     const result = await response.json();
-    
+
     if (result.data.length === 0) {
-      showNotification('ไม่พบข้อมูลในฐานข้อมูล', 'warning');
+      showNotification("ไม่พบข้อมูลในฐานข้อมูล", "warning");
       // ถ้าไม่มีข้อมูลใน database ให้โหลดจาก localStorage
-      const saved = localStorage.getItem('japanTripData');
+      const saved = localStorage.getItem("japanTripData");
       if (saved) {
         tripData = JSON.parse(saved);
         renderDays();
         if (tripData.length > 0) {
           showRoute(1);
-          document.querySelector('.day-card')?.classList.add('active');
+          document.querySelector(".day-card")?.classList.add("active");
         }
       }
       return;
@@ -270,7 +270,7 @@ async function loadFromDatabase(showLoading = true) {
 
     // Process and group activities by day
     const groupedActivities = {};
-    result.data.forEach(activity => {
+    result.data.forEach((activity) => {
       const dayMatch = activity.trip_day.match(/วันที่ (\d+)/);
       if (dayMatch) {
         const dayNum = parseInt(dayMatch[1]);
@@ -283,52 +283,58 @@ async function loadFromDatabase(showLoading = true) {
           text: activity.description,
           location: activity.place,
           cost: parseFloat(activity.cost) || 0,
-          dbId: activity.id
+          dbId: activity.id,
         });
       }
     });
 
     // Rebuild tripData from database
     tripData = [];
-    Object.keys(groupedActivities).sort((a, b) => a - b).forEach(dayNum => {
-      tripData.push({
-        day: parseInt(dayNum),
-        date: `${3 + parseInt(dayNum)} ธันวาคม`,
-        activities: groupedActivities[dayNum].sort((a, b) => a.time.localeCompare(b.time)),
-        routeInfo: '📍 เส้นทางจากฐานข้อมูล'
+    Object.keys(groupedActivities)
+      .sort((a, b) => a - b)
+      .forEach((dayNum) => {
+        tripData.push({
+          day: parseInt(dayNum),
+          date: `${3 + parseInt(dayNum)} ธันวาคม`,
+          activities: groupedActivities[dayNum].sort((a, b) =>
+            a.time.localeCompare(b.time)
+          ),
+          routeInfo: "📍 เส้นทางจากฐานข้อมูล",
+        });
       });
-    });
 
     renderDays();
     if (tripData.length > 0) {
       showRoute(1);
-      document.querySelector('.day-card')?.classList.add('active');
+      document.querySelector(".day-card")?.classList.add("active");
     }
     updateTotalTripCostDisplay();
-    showNotification(`✅ โหลดข้อมูลจากฐานข้อมูลสำเร็จ (${result.data.length} กิจกรรม)`, 'success');
-    
+    showNotification(
+      `✅ โหลดข้อมูลจากฐานข้อมูลสำเร็จ (${result.data.length} กิจกรรม)`,
+      "success"
+    );
+
     // บันทึกลง localStorage ด้วยเผื่อใช้ offline
-    localStorage.setItem('japanTripData', JSON.stringify(tripData));
-    
+    localStorage.setItem("japanTripData", JSON.stringify(tripData));
   } catch (error) {
-    console.error('❌ โหลดข้อมูลล้มเหลว:', error);
-    showNotification('❌ โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ', 'error');
-    
+    console.error("❌ โหลดข้อมูลล้มเหลว:", error);
+    showNotification("❌ โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ", "error");
+
     // ถ้าโหลดจาก database ไม่ได้ ให้ใช้ localStorage
-    const saved = localStorage.getItem('japanTripData');
+    const saved = localStorage.getItem("japanTripData");
     if (saved) {
       tripData = JSON.parse(saved);
       renderDays();
       if (tripData.length > 0) {
         showRoute(1);
-        document.querySelector('.day-card')?.classList.add('active');
+        document.querySelector(".day-card")?.classList.add("active");
       }
-      showNotification('ใช้ข้อมูลที่บันทึกไว้ในเครื่อง', 'info');
+      showNotification("ใช้ข้อมูลที่บันทึกไว้ในเครื่อง", "info");
     }
   } finally {
     if (loadBtn && showLoading) {
       loadBtn.disabled = false;
-      loadBtn.innerHTML = '📥 โหลดจากฐานข้อมูล';
+      loadBtn.innerHTML = "📥 โหลดจากฐานข้อมูล";
     }
   }
 }
@@ -441,7 +447,7 @@ function createDayElement(dayData, index) {
           <button class="btn-add-activity" onclick="addActivity(${index})">➕ เพิ่มกิจกรรม</button>
           ${highlightHtml}
           <div class="total-cost-summary">💰 ค่าใช้จ่ายรวมวันนี้: ฿${dayTotal.toLocaleString()}</div>
-          <div class="route-info" contenteditable="true" onblur="updateRouteInfo(${index}, this.textContent)">${
+          <div class="route-info" contenteditable="true" onblur="updateRouteInfo(${index}, this.textContent)" hidden>${
     dayData.routeInfo
   }</div>
         `;
@@ -581,66 +587,140 @@ function updateRouteInfo(dayIndex, newRouteInfo) {
 function detectLocationFromText(text) {
   text = text.toLowerCase();
 
-const locationKeywords = {
-  // Tokyo Area
-  narita: ["narita", "นาริตะ", "สนามบินนาริตะ", "ถึงนาริตะ", "บินลงนาริตะ"],
-  haneda: ["haneda", "ฮาเนดะ", "สนามบินฮาเนดะ", "ถึงฮาเนดะ"],
-  tokyo: ["tokyo", "โตเกียว", "ไปโตเกียว", "เที่ยวโตเกียว", "อยู่โตเกียว"],
-  shibuya: ["shibuya", "ชิบูยา", "ชิบุยะ", "แวะชิบูยา", "แวะชิบุยะ"],
-  shinjuku: ["shinjuku", "ชินจูกุ", "เดินชินจูกุ", "เที่ยวชินจูกุ"],
-  ueno: ["ueno", "อุเอโนะ", "เดินเล่นอุเอโนะ", "ตลาดอุเอโนะ"],
-  asakusa: ["asakusa", "อาซากุสะ", "เซ็นโซจิ", "วัดเซ็นโซจิ", "เที่ยวอาซากุสะ"],
-  skytree: ["skytree", "สกายทรี", "โตเกียวสกายทรี", "ไปสกายทรี"],
-  harajuku: ["harajuku", "ฮาราจูกุ", "เดินเล่นฮาราจูกุ", "ถนนทาเคชิตะ"],
-  akihabara: ["akihabara", "อากิฮาบาระ", "ย่านอากิบะ", "ซื้อของอากิฮาบาระ"],
-  ginza: ["ginza", "กินซ่า", "ช้อปปิ้งกินซ่า"],
-  odaiba: ["odaiba", "โอไดบะ", "เกาะโอไดบะ", "เที่ยวโอไดบะ"],
-  disney: [
-    "disney", "ดิสนีย์", "ดิสนีย์แลนด์", "ดิสนีย์พาร์ค", "โตเกียวดิสนีย์",
-    "ไปเที่ยวดิสนีย์", "สวนสนุกดิสนีย์", "tokyo disney", "disney resort"
-  ],
+  const locationKeywords = {
+    // Tokyo Area
+    narita: ["narita", "นาริตะ", "สนามบินนาริตะ", "ถึงนาริตะ", "บินลงนาริตะ"],
+    haneda: ["haneda", "ฮาเนดะ", "สนามบินฮาเนดะ", "ถึงฮาเนดะ"],
+    tokyo: ["tokyo", "โตเกียว", "ไปโตเกียว", "เที่ยวโตเกียว", "อยู่โตเกียว"],
+    shibuya: ["shibuya", "ชิบูยา", "ชิบุยะ", "แวะชิบูยา", "แวะชิบุยะ"],
+    shinjuku: ["shinjuku", "ชินจูกุ", "เดินชินจูกุ", "เที่ยวชินจูกุ"],
+    ueno: ["ueno", "อุเอโนะ", "เดินเล่นอุเอโนะ", "ตลาดอุเอโนะ"],
+    asakusa: [
+      "asakusa",
+      "อาซากุสะ",
+      "เซ็นโซจิ",
+      "วัดเซ็นโซจิ",
+      "เที่ยวอาซากุสะ",
+    ],
+    skytree: ["skytree", "สกายทรี", "โตเกียวสกายทรี", "ไปสกายทรี"],
+    harajuku: ["harajuku", "ฮาราจูกุ", "เดินเล่นฮาราจูกุ", "ถนนทาเคชิตะ"],
+    akihabara: ["akihabara", "อากิฮาบาระ", "ย่านอากิบะ", "ซื้อของอากิฮาบาระ"],
+    ginza: ["ginza", "กินซ่า", "ช้อปปิ้งกินซ่า"],
+    odaiba: ["odaiba", "โอไดบะ", "เกาะโอไดบะ", "เที่ยวโอไดบะ"],
+    disney: [
+      "disney",
+      "ดิสนีย์",
+      "ดิสนีย์แลนด์",
+      "ดิสนีย์พาร์ค",
+      "โตเกียวดิสนีย์",
+      "ไปเที่ยวดิสนีย์",
+      "สวนสนุกดิสนีย์",
+      "tokyo disney",
+      "disney resort",
+    ],
 
-  // Mt. Fuji Area
-  fuji: ["fuji", "ฟูจิ", "ภูเขาไฟฟูจิ", "fujisan", "ฟูจิซัง", "ไปฟูจิ", "ชมวิวฟูจิ"],
-  fujiq: ["fuji-q", "ฟูจิคิว", "สวนสนุกฟูจิคิว", "ฟูจิคิวไฮแลนด์", "fuji q highland"],
-  kawaguchiko: ["คาวากุจิ", "ทะเลสาบคาวากุจิ", "kawaguchiko", "พักคาวากุจิ"],
+    // Mt. Fuji Area
+    fuji: [
+      "fuji",
+      "ฟูจิ",
+      "ภูเขาไฟฟูจิ",
+      "fujisan",
+      "ฟูจิซัง",
+      "ไปฟูจิ",
+      "ชมวิวฟูจิ",
+    ],
+    fujiq: [
+      "fuji-q",
+      "ฟูจิคิว",
+      "สวนสนุกฟูจิคิว",
+      "ฟูจิคิวไฮแลนด์",
+      "fuji q highland",
+    ],
+    kawaguchiko: ["คาวากุจิ", "ทะเลสาบคาวากุจิ", "kawaguchiko", "พักคาวากุจิ"],
 
-  // Osaka Area
-  osaka: ["osaka", "โอซาก้า", "ไปโอซาก้า", "เที่ยวโอซาก้า"],
-  dotonbori: ["dotonbori", "โดทงโบริ", "เดินโดทงโบริ", "กินปูโดทงโบริ"],
-  osakacastle: ["osaka castle", "ปราสาทโอซาก้า", "castle", "เที่ยวปราสาทโอซาก้า"],
-  usj: ["usj", "universal", "ยูนิเวอร์แซล", "ยูนิเวอร์แซลโอซาก้า", "สวนสนุกยูนิเวอร์แซล", "universal studios"],
-  shin_osaka: ["shin-osaka", "ชินโอซาก้า", "สถานีชินโอซาก้า"],
-  kansai: ["kansai", "สนามบินคันไซ", "ถึงคันไซ", "บินลงคันไซ"],
+    // Osaka Area
+    osaka: ["osaka", "โอซาก้า", "ไปโอซาก้า", "เที่ยวโอซาก้า"],
+    dotonbori: ["dotonbori", "โดทงโบริ", "เดินโดทงโบริ", "กินปูโดทงโบริ"],
+    osakacastle: [
+      "osaka castle",
+      "ปราสาทโอซาก้า",
+      "castle",
+      "เที่ยวปราสาทโอซาก้า",
+    ],
+    usj: [
+      "usj",
+      "universal",
+      "ยูนิเวอร์แซล",
+      "ยูนิเวอร์แซลโอซาก้า",
+      "สวนสนุกยูนิเวอร์แซล",
+      "universal studios",
+    ],
+    shin_osaka: ["shin-osaka", "ชินโอซาก้า", "สถานีชินโอซาก้า"],
+    kansai: ["kansai", "สนามบินคันไซ", "ถึงคันไซ", "บินลงคันไซ"],
 
-  // Kyoto Area
-  kyoto: ["kyoto", "เกียวโต", "เที่ยวเกียวโต", "นั่งรถไฟไปเกียวโต"],
-  fushimi: ["fushimi", "ศาลเจ้าฟุชิมิ", "ฟุชิมิอินาริ", "ประตูแดง", "ศาลเจ้าอินาริ"],
-  kinkakuji: ["kinkakuji", "วัดทอง", "คินคะคุจิ", "golden pavilion", "เที่ยววัดทอง"],
-  arashiyama: ["arashiyama", "อาราชิยามะ", "ป่าไผ่", "bamboo grove", "เดินป่าไผ่"],
+    // Kyoto Area
+    kyoto: ["kyoto", "เกียวโต", "เที่ยวเกียวโต", "นั่งรถไฟไปเกียวโต"],
+    fushimi: [
+      "fushimi",
+      "ศาลเจ้าฟุชิมิ",
+      "ฟุชิมิอินาริ",
+      "ประตูแดง",
+      "ศาลเจ้าอินาริ",
+    ],
+    kinkakuji: [
+      "kinkakuji",
+      "วัดทอง",
+      "คินคะคุจิ",
+      "golden pavilion",
+      "เที่ยววัดทอง",
+    ],
+    arashiyama: [
+      "arashiyama",
+      "อาราชิยามะ",
+      "ป่าไผ่",
+      "bamboo grove",
+      "เดินป่าไผ่",
+    ],
 
-  // Nara
-  nara: ["nara", "นารา", "ไปนารา", "เจอกวาง", "น้องกวาง"],
-  nara_park: ["nara park", "สวนกวาง", "สวนสาธารณะนารา", "ป้อนกวาง"],
+    // Nara
+    nara: ["nara", "นารา", "ไปนารา", "เจอกวาง", "น้องกวาง"],
+    nara_park: ["nara park", "สวนกวาง", "สวนสาธารณะนารา", "ป้อนกวาง"],
 
-  // Hiroshima
-  hiroshima: ["hiroshima", "ฮิโรชิม่า", "ไปฮิโรชิม่า", "เที่ยวฮิโรชิม่า"],
-  peacepark: ["peace park", "สวนสันติภาพ", "อนุสรณ์ฮิโรชิม่า", "พิพิธภัณฑ์สงคราม"],
+    // Hiroshima
+    hiroshima: ["hiroshima", "ฮิโรชิม่า", "ไปฮิโรชิม่า", "เที่ยวฮิโรชิม่า"],
+    peacepark: [
+      "peace park",
+      "สวนสันติภาพ",
+      "อนุสรณ์ฮิโรชิม่า",
+      "พิพิธภัณฑ์สงคราม",
+    ],
 
-  // Sapporo
-  sapporo: ["sapporo", "ซัปโปโร", "ไปซัปโปโร", "เที่ยวซัปโปโร", "หิมะซัปโปโร"],
-  odori: ["odori", "สวนโอโดริ", "odori park", "เทศกาลหิมะ"],
+    // Sapporo
+    sapporo: [
+      "sapporo",
+      "ซัปโปโร",
+      "ไปซัปโปโร",
+      "เที่ยวซัปโปโร",
+      "หิมะซัปโปโร",
+    ],
+    odori: ["odori", "สวนโอโดริ", "odori park", "เทศกาลหิมะ"],
 
-  // Fukuoka
-  fukuoka: ["fukuoka", "ฟุกุโอกะ", "ไปฟุกุโอกะ", "สนามบินฟุกุโอกะ"],
+    // Fukuoka
+    fukuoka: ["fukuoka", "ฟุกุโอกะ", "ไปฟุกุโอกะ", "สนามบินฟุกุโอกะ"],
 
-  // Nagoya
-  nagoya: ["nagoya", "นาโกย่า", "เที่ยวนาโกย่า", "ไปนาโกย่า"],
+    // Nagoya
+    nagoya: ["nagoya", "นาโกย่า", "เที่ยวนาโกย่า", "ไปนาโกย่า"],
 
-  // Yokohama
-  yokohama: ["yokohama", "โยโกฮาม่า", "ไปโยโกฮาม่า", "เดินโยโกฮาม่า"],
-  minatomirai: ["minato mirai", "มินาโตะมิไร", "yokohama bay", "พิพิธภัณฑ์เรือ", "เดินริมอ่าว"]
-};
+    // Yokohama
+    yokohama: ["yokohama", "โยโกฮาม่า", "ไปโยโกฮาม่า", "เดินโยโกฮาม่า"],
+    minatomirai: [
+      "minato mirai",
+      "มินาโตะมิไร",
+      "yokohama bay",
+      "พิพิธภัณฑ์เรือ",
+      "เดินริมอ่าว",
+    ],
+  };
 
   for (let [location, keywords] of Object.entries(locationKeywords)) {
     if (keywords.some((keyword) => text.includes(keyword))) {
@@ -930,16 +1010,19 @@ let lastEditedActivityIndex = null;
 async function init() {
   initMap();
   await checkDatabaseConnection();
-  
+
   // รอให้ check connection เสร็จก่อนแล้วค่อยโหลดข้อมูล
   loadData();
-  
+
   // Add auto-save on any content change
-  document.addEventListener('input', triggerAutoSave);
-  document.addEventListener('blur', triggerAutoSave, true);
-  
+  document.addEventListener("input", triggerAutoSave);
+  document.addEventListener("blur", triggerAutoSave, true);
+
   // Show initial status
-  showStatus('โปรแกรมพร้อมใช้งาน! คลิกที่การ์ดวันเพื่อดูเส้นทางบนแผนที่', 'success');
+  showStatus(
+    "โปรแกรมพร้อมใช้งาน! คลิกที่การ์ดวันเพื่อดูเส้นทางบนแผนที่",
+    "success"
+  );
 }
 
 // Start the application when page loads
@@ -1097,7 +1180,8 @@ function resetBudget() {
   updateBudget();
 }
 function normalizeThaiText(text) {
-  return text.toLowerCase()
+  return text
+    .toLowerCase()
     .replace("ดิสนีย์แลนด์", "ดิสนีย์")
     .replace("ยูนิเวอร์แซลสตูดิโอ", "ยูนิเวอร์แซล")
     .replace(/\s+/g, ""); // ลบช่องว่าง
@@ -1117,4 +1201,115 @@ function calculateTotalTripCost() {
     }
   }
   return total;
+}
+let settingsState = {
+  itinerary: true,
+  map: true,
+  weather: true,
+  budget: true,
+  darkMode: false,
+  advanced: false,
+};
+
+// Initialize settings from localStorage
+function initSettings() {
+  const saved = localStorage.getItem("japanTripSettings");
+  if (saved) {
+    settingsState = { ...settingsState, ...JSON.parse(saved) };
+  }
+
+  if (settingsState.darkMode) {
+    document.body.classList.add("dark-mode");
+  }
+
+  applySettingsOnly();
+  updateToggleSwitches();
+}
+
+function applySettingsOnly() {
+  Object.keys(settingsState).forEach((key) => {
+    const targetName = key.replace(/([A-Z])/g, "-$1").toLowerCase();
+    applySectionToggle(targetName, settingsState[key]);
+  });
+}
+
+function toggleSettings() {
+  const button = document.querySelector(".settings-button");
+  const panel = document.querySelector(".settings-panel");
+  const overlay = document.querySelector(".settings-overlay");
+
+  button.classList.toggle("active");
+  panel.classList.toggle("active");
+  overlay.classList.toggle("active");
+
+  updateToggleSwitches();
+}
+function toggleSettings() {
+  const button = document.querySelector(".settings-button");
+  const panel = document.querySelector(".settings-panel");
+  const overlay = document.querySelector(".settings-overlay");
+
+  button.classList.toggle("active");
+  panel.classList.toggle("active");
+  overlay.classList.toggle("active");
+
+  updateToggleSwitches();
+}
+function toggleSection(element) {
+  const target = element.getAttribute("data-target");
+  const isActive = element.classList.contains("active");
+
+  element.classList.toggle("active");
+
+  const stateKey = target.replace(/-([a-z])/g, (match, letter) =>
+    letter.toUpperCase()
+  );
+  settingsState[stateKey] = !isActive;
+
+  applySectionToggle(target, !isActive);
+  localStorage.setItem("japanTripSettings", JSON.stringify(settingsState));
+}
+function applySectionToggle(target, enabled) {
+  const mainContent = document.getElementById("main-content");
+
+  switch (target) {
+    case "dark-mode":
+      document.body.classList.add("dark-mode-transition");
+
+      if (enabled) {
+        document.body.classList.add("dark-mode");
+      } else {
+        document.body.classList.remove("dark-mode");
+      }
+
+      setTimeout(() => {
+        document.body.classList.remove("dark-mode-transition");
+      }, 300);
+      break;
+
+  }
+}
+
+function updateToggleSwitches() {
+  Object.keys(settingsState).forEach((key) => {
+    const targetName = key.replace(/([A-Z])/g, "-$1").toLowerCase();
+    const toggle = document.querySelector(`[data-target="${targetName}"]`);
+
+    if (toggle) {
+      if (settingsState[key]) {
+        toggle.classList.add("active");
+      } else {
+        toggle.classList.remove("active");
+      }
+    }
+  });
+}
+function closeSettings() {
+  const button = document.querySelector(".settings-button");
+  const panel = document.querySelector(".settings-panel");
+  const overlay = document.querySelector(".settings-overlay");
+
+  button.classList.remove("active");
+  panel.classList.remove("active");
+  overlay.classList.remove("active");
 }
