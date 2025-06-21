@@ -1,217 +1,832 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ไปดูหิมะกานนนนนน</title>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-    <link rel="stylesheet" href="style.css"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  </head>
-  <body>
-        <button class="settings-button" data-target="dark-mode"
-              onclick="toggleSection(this)">
-                  <div class="toggle-label">
-              <span>🌙</span>
-            </div>
-    </button>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แพลนเที่ยวญี่ปุ่น</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: 
+                linear-gradient(
+                    135deg, 
+                    rgba(255, 182, 193, 0.7) 0%, 
+                    rgba(173, 216, 230, 0.7) 50%, 
+                    rgba(255, 160, 122, 0.7) 100%
+                ),
+                url('https://images.unsplash.com/photo-1545569341-9eb8b30979d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover fixed;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 182, 193, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(173, 216, 230, 0.2) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: 
+                linear-gradient(135deg, 
+                    rgba(255, 107, 107, 0.95) 0%, 
+                    rgba(238, 90, 82, 0.95) 50%, 
+                    rgba(255, 160, 122, 0.95) 100%
+                ),
+                url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                url('https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+            opacity: 0.2;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .header > * {
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            padding: 20px;
+            background: 
+                linear-gradient(135deg, 
+                    rgba(255, 255, 255, 0.95) 0%, 
+                    rgba(255, 182, 193, 0.3) 50%, 
+                    rgba(173, 216, 230, 0.3) 100%
+                ),
+                url('https://images.unsplash.com/photo-1528164344705-47542687000d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+            border-bottom: 2px solid rgba(225, 229, 233, 0.5);
+            text-align: center;
+            position: relative;
+        }
+
+        .controls::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                url('https://images.unsplash.com/photo-1528164344705-47542687000d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+            opacity: 0.1;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .controls > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #2ed573;
+            color: white;
+        }
+
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+
+        .infographic-container {
+            padding: 40px;
+            background: 
+                linear-gradient(
+                    135deg, 
+                    rgba(255, 255, 255, 0.95) 0%, 
+                    rgba(255, 182, 193, 0.9) 20%, 
+                    rgba(173, 216, 230, 0.9) 40%, 
+                    rgba(255, 160, 122, 0.9) 60%, 
+                    rgba(255, 255, 255, 0.95) 100%
+                ),
+                url('https://images.unsplash.com/photo-1542051841857-5f90071e7989?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .infographic-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                url('https://images.unsplash.com/photo-1480796927426-f609979314bd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover,
+                linear-gradient(45deg, rgba(255, 182, 193, 0.1) 25%, transparent 25%, transparent 75%, rgba(255, 182, 193, 0.1) 75%);
+            background-size: cover, 20px 20px;
+            opacity: 0.3;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .infographic-title {
+            text-align: center;
+            color: white;
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .infographic-subtitle {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .travel-path {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .path-line {
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            right: 50px;
+            height: 4px;
+            background: 
+                linear-gradient(90deg, 
+                    rgba(255, 255, 255, 0.8) 0%, 
+                    rgba(255, 182, 193, 0.9) 25%, 
+                    rgba(173, 216, 230, 0.9) 50%, 
+                    rgba(255, 160, 122, 0.9) 75%, 
+                    rgba(255, 255, 255, 0.8) 100%
+                );
+            border-radius: 2px;
+            z-index: 1;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .path-line::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: 
+                repeating-linear-gradient(90deg, 
+                    transparent 0%, 
+                    rgba(255, 255, 255, 0.6) 5%, 
+                    transparent 10%,
+                    rgba(255, 182, 193, 0.6) 15%,
+                    transparent 20%,
+                    rgba(173, 216, 230, 0.6) 25%,
+                    transparent 30%
+                );
+            border-radius: 5px;
+            animation: dashMove 4s linear infinite;
+        }
+
+        @keyframes dashMove {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(100px); }
+        }
+
+        .day-stop {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 80px;
+            z-index: 2;
+        }
+
+        .day-stop:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .day-marker {
+            width: 80px;
+            height: 80px;
+            background: 
+                linear-gradient(135deg, 
+                    rgba(255, 107, 107, 0.9) 0%, 
+                    rgba(238, 90, 82, 0.9) 50%, 
+                    rgba(255, 160, 122, 0.9) 100%
+                );
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 6px solid white;
+            box-shadow: 
+                0 4px 12px rgba(0,0,0,0.3),
+                0 0 0 2px rgba(255, 107, 107, 0.3);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .day-marker::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            animation: pulse 2s infinite;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .day-content {
+            background: 
+                linear-gradient(135deg, 
+                    rgba(255, 255, 255, 0.95) 0%, 
+                    rgba(255, 255, 255, 0.9) 100%
+                );
+            border-radius: 15px;
+            padding: 20px;
+            margin: 0 30px;
+            min-width: 300px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            position: relative;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .day-content::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 12px solid transparent;
+        }
+
+        .day-stop:nth-child(odd) .day-content::before {
+            left: -24px;
+            top: 30px;
+            border-right-color: white;
+        }
+
+        .day-stop:nth-child(even) .day-content::before {
+            right: -24px;
+            top: 30px;
+            border-left-color: white;
+        }
+
+        .day-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .activity-item {
+            background: #f8f9ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .activity-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .activity-time {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .activity-cost {
+            background: #2ed573;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .activity-note {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .decorative-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .decorative-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .japanese-element {
+            position: absolute;
+            opacity: 0.15;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .torii {
+            top: 5%;
+            right: 10%;
+            font-size: 4em;
+            color: #ff6b6b;
+            animation-delay: 0s;
+        }
+
+        .sakura {
+            top: 15%;
+            left: 5%;
+            font-size: 3em;
+            color: #ffb6c1;
+            animation-delay: 2s;
+        }
+
+        .fuji {
+            bottom: 20%;
+            right: 15%;
+            font-size: 3.5em;
+            color: #4ecdc4;
+            animation-delay: 4s;
+        }
+
+        .pagoda {
+            bottom: 10%;
+            left: 8%;
+            font-size: 3em;
+            color: #ffa07a;
+            animation-delay: 6s;
+        }
+
+        .cloud {
+            background: rgba(255,255,255,0.3);
+            border-radius: 50px;
+            animation: cloudFloat 12s ease-in-out infinite;
+        }
+
+        .cloud1 {
+            width: 120px;
+            height: 50px;
+            top: 8%;
+            left: 75%;
+            animation-delay: 0s;
+        }
+
+        .cloud2 {
+            width: 180px;
+            height: 70px;
+            top: 60%;
+            left: 5%;
+            animation-delay: 4s;
+        }
+
+        .cloud3 {
+            width: 100px;
+            height: 40px;
+            top: 35%;
+            right: 20%;
+            animation-delay: 8s;
+        }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0px) translateX(0px) rotate(0deg); 
+            }
+            25% { 
+                transform: translateY(-15px) translateX(5px) rotate(2deg); 
+            }
+            50% { 
+                transform: translateY(-25px) translateX(10px) rotate(0deg); 
+            }
+            75% { 
+                transform: translateY(-10px) translateX(5px) rotate(-1deg); 
+            }
+        }
+
+        @keyframes cloudFloat {
+            0%, 100% { 
+                transform: translateY(0px) translateX(0px); 
+                opacity: 0.3;
+            }
+            33% { 
+                transform: translateY(-20px) translateX(15px); 
+                opacity: 0.2;
+            }
+            66% { 
+                transform: translateY(-30px) translateX(30px); 
+                opacity: 0.4;
+            }
+        }
+
+        .summary-stats {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .download-section {
+            padding: 20px;
+            text-align: center;
+            background: 
+                linear-gradient(135deg, 
+                    rgba(255, 255, 255, 0.95) 0%, 
+                    rgba(255, 182, 193, 0.3) 50%, 
+                    rgba(173, 216, 230, 0.3) 100%
+                ),
+                url('https://images.unsplash.com/photo-1528164344705-47542687000d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+            position: relative;
+        }
+
+        .download-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                url('https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+            opacity: 0.1;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .download-section > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .api-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .api-connected {
+            background: rgba(46, 213, 115, 0.2);
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        @media (max-width: 768px) {
+            .day-stop {
+                flex-direction: column !important;
+                text-align: center;
+            }
+
+            .day-content {
+                margin: 20px 0 0 0;
+                min-width: auto;
+                width: 100%;
+            }
+
+            .day-content::before {
+                display: none;
+            }
+
+            .path-line {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<a href="settings.html">Settings</a>
+<body>
     <div class="container">
-      <div class="header">
-        <h1>
-          <img
-            style="height: 30px"
-            src="https://w7.pngwing.com/pngs/301/302/png-transparent-japan-torii-idea-sticker-t-shirt-japan-logo-sticker-art.png"
-          />
-          Japan Road Trip
-        </h1>
-        <p>การท่องเที่ยวญี่ปุ่น 6 วัน 7 คืน | 6 คน </p>
-        <div id="db-status" class="db-status db-disconnected">
-          🔴 ยังไม่ได้เชื่อมต่อฐานข้อมูล
-        </div>
-        <div class="trip-info">
-          <div class="info-card">
-            <h3>📅 วันเดินทาง</h3>
-            <p>4-10 ธันวาคม 2025</p>
-          </div>
-          <div class="info-card">
-            <h3>💰 งบประมาณ</h3>
-            <p>30,000-40,000 บาท/คน</p>
-            <span id="costid">ค่าใช้จ่าย : </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <button class="btn btn-success" onclick="addNewDay()">➕ เพิ่มวันใหม่</button>
-      </div>
-
-      <div id="status-display" class="status-display" style="display: none;"></div>
-
-      <div class="main-content">
-        <div class="itinerary-section">
-          <h2>🗓️ รายละเอียดการเดินทาง</h2>
-          <div id="days-container">
-            <!-- Days will be loaded here -->
-          </div>
+        <div class="header">
+            <h1>แพลนเที่ยวญี่ปุ่น </h1>
+            <div id="api-status" class="api-status api-disconnected">
+                🔴
+            </div>
+            
         </div>
 
-        <div class="map-section">
-          <h2>🗺️ แผนที่เส้นทางการเดินทาง</h2>
-          <div id="map"></div>
-          <div class="warning">
-            💡 คลิกวันที่ด้านซ้ายเพื่อดูเส้นทางและกิจกรรมบนแผนที่<br />
-            📍 คลิกที่ pin แต่ละจุดเพื่อดูรายละเอียดกิจกรรม<br />
-            💰 แก้ไขค่าใช้จ่ายได้โดยตรงในแต่ละกิจกรรม
-          </div>
+        <div class="infographic-container" id="infographic">
+            <div class="decorative-elements">
+                <div class="japanese-element torii">⛩️</div>
+                <div class="japanese-element sakura">🌸</div>
+                <div class="japanese-element fuji">🗻</div>
+                <div class="japanese-element pagoda">🏯</div>
+                <div class="cloud cloud1"></div>
+                <div class="cloud cloud2"></div>
+                <div class="cloud cloud3"></div>
+            </div>
+
+            <div class="infographic-title" id="trip-title" hidden>Japan Road Trip</div>
+            <div class="infographic-subtitle" id="trip-subtitle" hidden>การท่องเที่ยวญี่ปุ่น 6 วัน 7 คืน | 6 คน</div>
+
+            <div class="travel-path" id="travel-path">
+                <div class="path-line"></div>
+                <!-- วันที่จะถูกสร้างที่นี่ -->
+            </div>
+
+            <div class="summary-stats" id="summary-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="total-days">6</span>
+                    <span class="stat-label">วัน</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="total-places">12</span>
+                    <span class="stat-label">สถานที่</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="total-travelers">6</span>
+                    <span class="stat-label">คน</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="total-budget">35K</span>
+                    <span class="stat-label">บาท/คน</span>
+                </div>
+            </div>
         </div>
-      </div>
+
     </div>
 
-    <div class="budget-section" id="budget-section">
-        <h2>💰 เครื่องคำนวณค่าใช้จ่าย (แบบ Real-time)</h2>
+    <script>
+const API_BASE_URL = "https://trip-backend-d62e.onrender.com";
+        async function loadFromForm() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/activities`);
+                const result = await response.json();
+                
+                if (result.success && result.data.length > 0) {
+                    const formattedData = formatApiDataToInfographic(result.data);
+                    generateInfographic(formattedData);
+                } else {
+                }
+            } catch (error) {
+                console.error('Error loading data from API:', error);
+            }
+        }
 
-        <div class="calculator-container">
-          <div class="input-section">
-            <h3>🔧 ปรับแต่งค่าใช้จ่าย</h3>
+        // โหลดข้อมูลจาก localStorage (สำหรับฟอร์ม)
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('japanTripData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                generateInfographic(data);
+            } else {
+            }
+        }
 
-            <div class="reset-button-container">
-              <button onclick="resetBudget()" class="reset-button">
-                🔄 รีเซ็ตค่าเริ่มต้น
-              </button>
-            </div>
+        // ฟังก์ชันเพิ่มเติมสำหรับการจัดการ API
+        async function refreshDataFromAPI() {
+            await loadFromForm();
+        }
 
-            <div class="calculator-grid">
-              <div class="calc-card">
-                <label>✈️ ตั๋วเครื่องบิน (บาท/คน)</label>
-                <input
-                  type="range"
-                  id="flight-cost"
-                  min="10000"
-                  max="30000"
-                  value="13000"
-                  oninput="updateBudget()"
-                />
-                <div class="value-display" id="flight-value">17,500 บาท</div>
-              </div>
+        // ตรวจสอบสถานะการเชื่อมต่อ API
+        async function checkApiConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/activities`);
+                if (response.ok) {
+                    document.getElementById('api-status').innerHTML = '🟢';
+                    document.getElementById('api-status').className = 'api-status api-connected';
+                } else {
+                    throw new Error('API response not ok');
+                }
+            } catch (error) {
+                document.getElementById('api-status').innerHTML = '🔴';
+                document.getElementById('api-status').className = 'api-status api-disconnected';
+            }
+        }
+        function formatApiDataToInfographic(apiData) {
+            // จัดกลุ่มข้อมูลตามวัน
+            const groupedByDay = {};
+            
+            apiData.forEach(activity => {
+                const day = activity.trip_day; // "วันที่ 1", "วันที่ 2", etc.
+                if (!groupedByDay[day]) {
+                    groupedByDay[day] = [];
+                }
+                
+                groupedByDay[day].push({
+                    place: activity.place,
+                    time: activity.time,
+                    cost: activity.cost || 0,
+                    note: activity.description || ''
+                });
+            });
 
-              <div class="calc-card">
-                <label>🏨 ที่พัก (บาท/คน/คืน)</label>
-                <input
-                  type="range"
-                  id="hotel-cost"
-                  min="1000"
-                  max="4000"
-                  value="2000"
-                  oninput="updateBudget()"
-                />
-                <div class="value-display" id="hotel-value">
-                  2,000 บาท × 6 คืน
+            // แปลงเป็นรูปแบบที่ต้องการ
+            const days = Object.keys(groupedByDay)
+                .sort((a, b) => {
+                    const dayA = parseInt(a.match(/\d+/)[0]);
+                    const dayB = parseInt(b.match(/\d+/)[0]);
+                    return dayA - dayB;
+                })
+                .map((dayKey, index) => {
+                    const dayNumber = parseInt(dayKey.match(/\d+/)[0]);
+                    return {
+                        dayNumber: dayNumber,
+                        activities: groupedByDay[dayKey]
+                    };
+                });
+
+            // คำนวณข้อมูลทั่วไป
+            const totalDays = days.length;
+            const totalPlaces = apiData.length;
+            const startDate = new Date().toISOString().split('T')[0]; // วันปัจจุบันเป็นค่าเริ่มต้น
+            
+            return {
+                tripTitle: "Japan Road Trip",
+                tripDescription: `การท่องเที่ยวญี่ปุ่น ${totalDays} วัน`,
+                startDate: startDate,
+                travelers: "6",
+                budget: "30,000-40,000",
+                days: days
+            };
+        }
+        function generateInfographic(data) {
+            // อัพเดทหัวข้อ
+            document.getElementById('trip-title').textContent = data.tripTitle || 'Japan Road Trip';
+            document.getElementById('trip-subtitle').textContent = 
+                `${data.tripDescription || 'การท่องเที่ยวญี่ปุ่น'} | ${data.travelers || '6'} คน`;
+
+            // อัพเดทสถิติ
+            document.getElementById('total-days').textContent = data.days ? data.days.length : 0;
+            document.getElementById('total-travelers').textContent = data.travelers || '6';
+            document.getElementById('total-budget').textContent = data.budget ? data.budget.split('-')[0] : '30K';
+            
+            let totalPlaces = 0;
+            if (data.days) {
+                data.days.forEach(day => {
+                    totalPlaces += day.activities ? day.activities.length : 0;
+                });
+            }
+            document.getElementById('total-places').textContent = totalPlaces;
+
+            // สร้างเส้นทางการเดินทาง
+            const travelPath = document.getElementById('travel-path');
+            travelPath.innerHTML = '<div class="path-line"></div>';
+
+            if (data.days && data.days.length > 0) {
+                data.days.forEach((day, index) => {
+                    const dayElement = createDayElement(day, index, data.startDate);
+                    travelPath.appendChild(dayElement);
+                });
+            }
+        }
+
+        // สร้าง element สำหรับแต่ละวัน
+        function createDayElement(day, index, startDate) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'day-stop';
+
+            // คำนวณวันที่
+            const date = new Date(startDate);
+            date.setDate(date.getDate() + index);
+            const dateStr = date.toLocaleDateString('th-TH', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+
+            // สร้างกิจกรรม
+            let activitiesHTML = '';
+            if (day.activities && day.activities.length > 0) {
+                activitiesHTML = day.activities.map(activity => `
+                    <div class="activity-item">
+                        <div class="activity-header">
+                            <span class="activity-name">📍 ${activity.place || 'ไม่ระบุสถานที่'}</span>
+                            <span class="activity-time">⏰ ${activity.time || ''}</span>
+                        </div>
+                        ${activity.cost && parseInt(activity.cost) > 0 ? 
+                            `<div class="activity-cost">💰 ${parseInt(activity.cost).toLocaleString()} บาท</div>` : 
+                            ''
+                        }
+                        ${activity.note ? `<div class="activity-note">💭 ${activity.note}</div>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                activitiesHTML = '<div class="activity-item"><div class="activity-name">ไม่มีกิจกรรม</div></div>';
+            }
+
+            dayDiv.innerHTML = `
+                <div class="day-marker">
+                    วัน ${day.dayNumber || index + 1}
                 </div>
-              </div>
-
-              <div class="calc-card">
-                <label>🚗 รถเช่า+น้ำมัน (บาท/วัน ÷ 6 คน)</label>
-                <input
-                  type="range"
-                  id="car-cost"
-                  min="2000"
-                  max="5000"
-                  value="3000"
-                  oninput="updateBudget()"
-                />
-                <div class="value-display" id="car-value">3,000 บาท ÷ 6 คน</div>
-              </div>
-
-              <div class="calc-card">
-                <label>🎢 บัตรสวนสนุก (บาท/คน)</label>
-                <input
-                  type="range"
-                  id="ticket-cost"
-                  min="3000"
-                  max="8000"
-                  value="5000"
-                  oninput="updateBudget()"
-                />
-                <div class="value-display" id="ticket-value">5,000 บาท</div>
-              </div>
-
-              <div class="calc-card">
-                <label>🍜 อาหาร (บาท/คน/วัน)</label>
-                <input
-                  type="range"
-                  id="food-cost"
-                  min="300"
-                  max="2000"
-                  value="1000"
-                  oninput="updateBudget()"
-                />
-                <div class="value-display" id="food-value">1,000 บาท × 6 วัน</div>
-              </div>
-
-              <div class="calc-card">
-                <label>🛍️ ช็อปปิ้ง+อื่นๆ (บาท/คน)</label>
-                <input
-                  type="range"
-                  id="shopping-cost"
-                  min="500"
-                  max="5000"
-                  value="1500"
-                  oninput="updateBudget()"
-                />
-                <div class="value-display" id="shopping-value">1,500 บาท</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="result-section">
-            <h3>📊 ผลการคำนวณ</h3>
-
-            <div class="total-display">
-              <div class="total-per-person">
-                <h4>💰 ต่อคน</h4>
-                <div class="big-number" id="total-per-person">32,700 บาท</div>
-              </div>
-
-              <div class="total-group">
-                <h4>👥 รวม 6 คน</h4>
-                <div class="big-number" id="total-group">196,200 บาท</div>
-              </div>
-            </div>
-
-            <div class="budget-status" id="budget-status">
-              <div class="status-good">
-                ✅ อยู่ในงบประมาณ 30,000-40,000 บาท/คน
-              </div>
-            </div>
-
-            <div class="breakdown-chart" id="breakdown-chart">
-              <h4>📈 สัดส่วนค่าใช้จ่าย</h4>
-              <div class="chart-container">
-                <div class="chart-bar">
-                  <div class="bar flight-bar" style="width: 53.5%"></div>
-                  <span>✈️ ตั๋วเครื่องบิน: 53.5%</span>
+                <div class="day-content">
+                    <div class="day-title">📅 วันที่ ${day.dayNumber || index + 1} (${dateStr})</div>
+                    ${activitiesHTML}
                 </div>
-                <div class="chart-bar">
-                  <div class="bar hotel-bar" style="width: 22%"></div>
-                  <span>🏨 ที่พัก: 22.0%</span>
-                </div>
-                <div class="chart-bar">
-                  <div class="bar ticket-bar" style="width: 15.3%"></div>
-                  <span>🎢 สวนสนุก: 15.3%</span>
-                </div>
-                <div class="chart-bar">
-                  <div class="bar food-bar" style="width: 9.2%"></div>
-                  <span>🍜 อาหาร: 9.2%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          </div>
+            `;
 
-   <script src="script.js"></script>
-  </body>
+            return dayDiv;
+        }
+        // โหลดข้อมูลตัวอย่างและตรวจสอบ API เมื่อเริ่มต้น
+        window.onload = function() {
+            loadFromForm();
+            checkApiConnection();
+        };
+    </script>
+</body>
 </html>

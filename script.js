@@ -506,7 +506,6 @@ function addActivity(dayIndex) {
 
 // Remove activity
 function removeActivity(dayIndex, activityIndex) {
-  if (tripData[dayIndex].activities.length > 1) {
     const activity = tripData[dayIndex].activities[activityIndex];
 
     // Delete from database if has dbId
@@ -517,9 +516,6 @@ function removeActivity(dayIndex, activityIndex) {
     tripData[dayIndex].activities.splice(activityIndex, 1);
     renderDays();
     showNotification("ลบกิจกรรมเรียบร้อย", "success");
-  } else {
-    showNotification("ต้องมีกิจกรรมอย่างน้อย 1 รายการต่อวัน", "error");
-  }
 }
 
 // Delete activity from database
